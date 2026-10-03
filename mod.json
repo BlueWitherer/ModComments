@@ -27,7 +27,7 @@
     },
     "incompatibilities": {
         "user95401.geode-mod-comments": {
-            "version": ">=1.0.0-alpha",
+            "version": ">=2.0.0-beta",
             "breaking": true
         }
     },
