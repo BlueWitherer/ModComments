@@ -26,10 +26,7 @@
         "alphalaneous.alphas_geode_utils": ">=1.2.0"
     },
     "incompatibilities": {
-        "user95401.geode-mod-comments": {
-            "version": ">=2.0.0-beta",
-            "breaking": true
-        }
+        "user95401.geode-mod-comments": ">=2.0.0-alpha"
     },
     "api": {
         "include": [

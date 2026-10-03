@@ -9,6 +9,25 @@ using namespace cw::mod_cmmts;
 
 static constexpr auto g_commentWait = 30;
 
+bool CommentItem::init(Comment cmmt) {
+    m_comment = std::move(cmmt);
+
+    if (!CCNode::init()) return false;
+
+    return true;
+};
+
+CommentItem* CommentItem::create(Comment cmmt) {
+    auto ret = new CommentItem();
+    if (ret->init(std::move(cmmt))) {
+        ret->autorelease();
+        return ret;
+    };
+
+    delete ret;
+    return nullptr;
+};
+
 asp::Instant CommentsPopup::s_lastComment = asp::Instant();
 
 bool CommentsPopup::init(std::string modID, bool geodeTheme) {
