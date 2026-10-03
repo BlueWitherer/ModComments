@@ -25,6 +25,12 @@
     "dependencies": {
         "alphalaneous.alphas_geode_utils": ">=1.2.0"
     },
+    "incompatibilities": {
+        "user95401.geode-mod-comments": {
+            "version": ">=1.0.0-alpha",
+            "breaking": true
+        }
+    },
     "api": {
         "include": [
             "include/*.hpp"
