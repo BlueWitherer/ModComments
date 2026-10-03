@@ -29,3 +29,7 @@ option(CW_TESTING "Enable local testing mode" ON)
 if(CW_TESTING)
     target_compile_definitions(${PROJECT_NAME} PRIVATE CW_TESTING=1)
 endif()
+
+CPMAddPackage("gh:dankmeme01/cue#main")
+CPMAddPackage("gh:GlobedGD/argon@1.5.1")
+target_link_libraries(${PROJECT_NAME} cue argon)

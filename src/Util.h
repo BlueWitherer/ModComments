@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cue/Util.hpp>
+
+#include <argon/argon.hpp>
+
 #include <Geode/Geode.hpp>
 
 #include <ui/Include.h>
@@ -21,11 +25,32 @@ namespace cw::mod_cmmts {
                 .timeout(std::chrono::seconds(15));
         };
 
-        inline auto withAuth(int accountId, std::string token) {
+        inline auto withAuth(std::string token) {
+            auto const acc = argon::getGameAccountData();
+
             return geode::utils::web::WebRequest()
-                .param("account_id", accountId)
-                .param("authtoken", std::move(token));
+                .param("account_id", acc.accountId)
+                .param("authtoken", std::move(token))
+                .param("user_id", acc.userId)
+                .param("username", acc.username);
         };
+    };
+
+    namespace popups {
+        static constexpr auto g_rulesText =
+            "**Upon posting comments, you agree to the following <cr>rules</c>.**\n\n"
+            "---\n\n"
+            "![⚠](frame:geode.loader/info-warning.png?scale=0.375) <cy>*[Mod Comments](mod:cheeseworks.modcomments) was made for users to leave feedback on mods through an accessible in-game UI. **Mod developers are not responsible for providing support through comments**, please instead contact them through their official channels.*</c>\n\n"
+            "---\n\n"
+            "1. **Be civil.** - Engage in conversations that are <cg>respectful, fun, and constructive</c>. Any <co>comments made with the intention to hurt another individual or community</c> are **strictly prohibited**.\n\n"
+            "2. **Don't spam.** - Avoid <co>going too off-topic in the comments</c>. Attempting to <co>overload our servers</c> or <co>attempting to bypass spam protections</c> will result in **rate-limiting & IP bans**.\n\n"
+            "3. **No NSFW.** - <co>Inappropriate discussions</c> are **not allowed**. <cg>Respect boundares</c>, and keep comment sections <cg>safe and welcoming for everyone</c>!\n\n"
+            "4. **Staff decisions**. - Moderators are instructed to take <cg>whatever means necessary to keep chats safe</c>. If you believe action has been <co>wrongfully taken against you</c>, you can communicate your concerns in [Cheeseworks's Discord server](https://www.dsc.gg/cheeseworks)!\n\n"
+            "5. **Common sense.** - Not every rule can be written. <co>Acting in bad faith</c> because specific unethical behaviors aren't explicitly mentioned here **will still result in punishments**.\n\n"
+            "---\n\n"
+            "That's all, hope you enjoy the mod! ![<3](frame:gj_heartOn_001.png?scale=0.425)";
+
+        void showRules();
     };
 
     using namespace ui;

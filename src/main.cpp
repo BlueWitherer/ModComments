@@ -71,3 +71,11 @@ class $nodeModify(CommentsModPopup, ModPopup) {
         return Err("Could not cast this to FLAlertLayer");
     };
 };
+
+void popups::showRules() {
+    MDPopup::create(
+        "Comment Rules",
+        popups::g_rulesText,
+        "OK")
+        ->show();
+};

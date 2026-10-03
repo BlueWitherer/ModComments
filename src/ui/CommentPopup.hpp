@@ -7,9 +7,21 @@
 
 namespace cw::mod_cmmts {
     namespace ui {
-        class CommentCell final : public cocos2d::CCNode {};
+        class CommentCell final : public cocos2d::CCNode {
+        protected:
+            bool init(Comment cmmt);
+
+        public:
+            static CommentCell* create(Comment cmmt);
+        };
 
         class CommentsPopup final : public geode::Popup {
+            struct LinkButton final {
+                std::string id;
+                std::string sprite;
+                geode::Button::ButtonCallback callback;
+            };
+
         private:
             std::string m_modID;
             geode::ScrollLayer* m_commentList = nullptr;
