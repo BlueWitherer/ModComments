@@ -47,9 +47,9 @@ Result<Comment> matjson::Serialize<Comment>::fromJson(matjson::Value const& valu
     GEODE_UNWRAP_INTO(out.author, value["author"].as<CommentUser>());
     GEODE_UNWRAP_INTO(out.modID, value["mod"].asString());
     GEODE_UNWRAP_INTO(out.content, value["content"].asString());
-    GEODE_UNWRAP_INTO(auto unix, value["created"].asInt());
+    GEODE_UNWRAP_INTO(auto uTime, value["created"].asInt());
 
-    out.created = asp::SystemTime::fromUnix(unix);
+    out.created = asp::SystemTime::fromUnix(uTime);
 
     return Ok(std::move(out));
 };
