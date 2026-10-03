@@ -4,7 +4,7 @@
 
 #include <Geode/ui/GeodeUI.hpp>
 
-namespace cw::mod_comments {
+namespace cw::mod_cmmts {
     namespace ui {
         class TabSprite final : public cocos2d::CCNode {  // thank u gode uwu
         private:

@@ -5,7 +5,7 @@
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
-using namespace cw::mod_comments;
+using namespace cw::mod_cmmts;
 
 Result<WebRes> matjson::Serialize<WebRes>::fromJson(matjson::Value const& value) {
     GEODE_UNWRAP_INTO(std::string error, value["error"].asString());

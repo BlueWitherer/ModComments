@@ -4,7 +4,7 @@
 
 #include <Geode/utils/string.hpp>
 
-namespace cw::mod_comments {
+namespace cw::mod_cmmts {
     namespace str = geode::utils::string;
 
     namespace url {

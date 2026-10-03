@@ -5,7 +5,7 @@
 #include <alphalaneous.alphas_geode_utils/include/ObjectModify.hpp>
 
 using namespace geode::prelude;
-using namespace cw::mod_comments;
+using namespace cw::mod_cmmts;
 
 static constexpr std::string_view urlGeode = "https://geode-sdk.org/mods/";
 
@@ -47,7 +47,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
     };
 
     Result<std::string> getThisID() {
-        if (auto self = reinterpret_cast<Popup*>(this)) {
+        if (auto self = reinterpret_cast<FLAlertLayer*>(this)) {
             log::trace("Searching for mod page button in popup");
 
             if (auto modPageBtn = self->m_buttonMenu->getChildByID("mod-online-page-button")) {

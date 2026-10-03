@@ -5,10 +5,9 @@
 #include <ui/Include.h>
 
 #include <util/Macros.h>
-
 #include <util/Include.h>
 
-namespace cw::mod_comments {
+namespace cw::mod_cmmts {
     namespace request {
         inline auto base() {
             auto loader = geode::Loader::get();

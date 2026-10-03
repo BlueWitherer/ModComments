@@ -1,4 +1,4 @@
 #pragma once
 
-#include "Comments.hpp"
+#include "CommentPopup.hpp"
 #include "TabSprite.hpp"

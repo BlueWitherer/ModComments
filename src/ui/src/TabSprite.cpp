@@ -7,7 +7,7 @@
 #include <Geode/utils/ColorProvider.hpp>
 
 using namespace geode::prelude;
-using namespace cw::mod_comments;
+using namespace cw::mod_cmmts;
 
 bool TabSprite::init(ZStringView iconFrame, std::string text, float width, bool altColor) {
     if (!CCNode::init()) return false;

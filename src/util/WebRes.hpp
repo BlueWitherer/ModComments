@@ -2,7 +2,7 @@
 
 #include <Geode/Geode.hpp>
 
-namespace cw::mod_comments {
+namespace cw::mod_cmmts {
     struct WebRes final {
     private:
         matjson::Value m_payload;
@@ -32,7 +32,7 @@ namespace cw::mod_comments {
 };
 
 template <>
-struct matjson::Serialize<cw::mod_comments::WebRes> final {
-    static geode::Result<cw::mod_comments::WebRes> fromJson(matjson::Value const& value);
-    static matjson::Value toJson(cw::mod_comments::WebRes const& value);
+struct matjson::Serialize<cw::mod_cmmts::WebRes> final {
+    static geode::Result<cw::mod_cmmts::WebRes> fromJson(matjson::Value const& value);
+    static matjson::Value toJson(cw::mod_cmmts::WebRes const& value);
 };
