@@ -11,11 +11,15 @@ namespace cw::mod_cmmts {
         private:
             Comment m_comment;
 
+            geode::Label* m_contentLabel = nullptr;
+
         protected:
-            bool init(Comment cmmt);
+            bool isSelf() const noexcept;
+
+            bool init(Comment cmmt, float width);
 
         public:
-            static CommentItem* create(Comment cmmt);
+            static CommentItem* create(Comment cmmt, float width);
         };
 
         class CommentsPopup final : public geode::Popup {
@@ -32,6 +36,8 @@ namespace cw::mod_cmmts {
             static asp::Instant s_lastComment;
 
             geode::async::TaskHolder<WebRes> m_commentTask;
+
+            arc::Future<WebRes> getComments();
 
         protected:
             bool init(std::string modID, bool geodeTheme);
