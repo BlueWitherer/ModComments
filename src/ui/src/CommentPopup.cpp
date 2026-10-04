@@ -170,9 +170,6 @@ CommentItem* CommentItem::create(Comment cmmt, float width, bool geodeTheme) {
     return nullptr;
 };
 
-// asp::Instant CommentsPopup::s_lastComment;
-// StringSet CommentsPopup::s_validMods;
-
 bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_modID = std::move(modID);
 
@@ -333,7 +330,7 @@ arc::Future<WebRes> CommentsPopup::sendComment() {
     matjson::Value body;
     body["mod"] = m_modID;
     body["content"] = *co_await async::waitForMainThread<std::string>([self = WeakRef(this)]() {
-        if (auto s = self.lock()) return s->m_inputBox->getString();
+        if (auto s = self.lock()) return std::string{s->m_inputBox->getString()};
         return std::string{};
     });
     body["icons"] = impl::getUserIcons();
