@@ -45,6 +45,12 @@ namespace cw::mod_cmmts {
 };
 
 template <>
+struct matjson::Serialize<cw::mod_cmmts::UserIcons> final {
+    static geode::Result<cw::mod_cmmts::UserIcons> fromJson(matjson::Value const& value);
+    static matjson::Value toJson(cw::mod_cmmts::UserIcons const& value);
+};
+
+template <>
 struct matjson::Serialize<cw::mod_cmmts::CommentUser> final {
     static geode::Result<cw::mod_cmmts::CommentUser> fromJson(matjson::Value const& value);
     static matjson::Value toJson(cw::mod_cmmts::CommentUser const& value);

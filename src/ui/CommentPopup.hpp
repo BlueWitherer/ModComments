@@ -6,6 +6,12 @@
 #include <Geode/Geode.hpp>
 
 namespace cw::mod_cmmts {
+    struct CommentRequest final {
+        std::string modID;
+        std::string content;
+        UserIcons icons;
+    };
+
     namespace ui {
         class CommentItem final : public cocos2d::CCNode {
         private:
@@ -16,28 +22,35 @@ namespace cw::mod_cmmts {
         protected:
             bool isSelf() const noexcept;
 
-            bool init(Comment cmmt, float width);
+            bool init(Comment cmmt, float width, bool geodeTheme);
 
         public:
-            static CommentItem* create(Comment cmmt, float width);
+            static CommentItem* create(Comment cmmt, float width, bool geodeTheme);
         };
 
         class CommentsPopup final : public geode::Popup {
-            struct LinkButton final {
-                std::string id;
-                std::string sprite;
-                geode::Button::ButtonCallback callback;
-            };
-
         private:
             std::string m_modID;
+            bool m_geodeTheme = false;
+
             geode::ScrollLayer* m_commentList = nullptr;
+            cocos2d::CCNode* m_commentMenu = nullptr;
+
+            geode::TextInput* m_inputBox = nullptr;
+
+            geode::Button* m_refreshBtn = nullptr;
+
+            geode::LoadingSpinner* m_loading = nullptr;
 
             static asp::Instant s_lastComment;
 
             geode::async::TaskHolder<WebRes> m_commentTask;
 
             arc::Future<WebRes> getComments();
+            arc::Future<WebRes> sendComment();
+
+            void refreshComments();
+            bool showInput() const;
 
         protected:
             bool init(std::string modID, bool geodeTheme);
@@ -46,4 +59,10 @@ namespace cw::mod_cmmts {
             static CommentsPopup* create(std::string modID, bool geodeTheme = true);
         };
     };
+};
+
+template <>
+struct matjson::Serialize<cw::mod_cmmts::CommentRequest> final {
+    static geode::Result<cw::mod_cmmts::CommentRequest> fromJson(matjson::Value const& value);
+    static matjson::Value toJson(cw::mod_cmmts::CommentRequest const& value);
 };

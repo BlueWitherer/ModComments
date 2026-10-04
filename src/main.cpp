@@ -7,12 +7,19 @@
 using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
-static constexpr std::string_view urlGeode = "https://geode-sdk.org/mods/";
+namespace cw::mod_cmmts {
+    namespace main {
+        static constexpr std::string_view g_urlGeode = "https://geode-sdk.org/mods/";
+        static StringSet g_validMods;
+    };
+};
 
 class $nodeModify(CommentsModPopup, ModPopup) {
     struct Fields final {
         std::string id;
         bool geodeTheme = false;
+
+        TaskHolder<WebRes> checkIndexTask;
     };
 
     void modify() {
@@ -33,8 +40,26 @@ class $nodeModify(CommentsModPopup, ModPopup) {
 
                     auto tab = CCMenuItemExt::createSpriteExtra(
                         tabSprite,
-                        [f](auto sender) {
-                            CommentsPopup::create(f->id, f->geodeTheme)->show();
+                        [this, f](auto) {
+                            if (auto const it = main::g_validMods.find(f->id); it != main::g_validMods.end()) return CommentsPopup::create(f->id, f->geodeTheme)->show();
+
+                            auto popup = UploadActionPopup::create(nullptr, fmt::format("Checking Geode index...", f->id));
+                            popup->show();
+
+                            f->checkIndexTask.spawn(
+                                checkModIndex(f->id),
+                                [f, p = WeakRef(popup)](WebRes res) {
+                                    if (res.isOk()) {
+                                        if (auto popup = p.lock()) popup->removeFromParent();
+                                        CommentsPopup::create(f->id, f->geodeTheme)->show();
+
+                                        main::g_validMods.insert(f->id);
+
+                                        return;
+                                    };
+
+                                    if (auto popup = p.lock()) popup->showFailMessage("Comments unavailable");
+                                });
                         });
                     tab->setID("comments-btn"_spr);
                     tab->setTag(tabsMenu->getChildrenCount());
@@ -58,7 +83,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
 
                     std::string urlStr = url->getCString();
 
-                    if (utils::string::startsWith(urlStr, urlGeode)) return Ok(urlStr.erase(0, urlGeode.size()));
+                    if (utils::string::startsWith(urlStr, main::g_urlGeode)) return Ok(urlStr.erase(0, main::g_urlGeode.size()));
                     return Err("Mod ID not found");
                 };
 
@@ -69,6 +94,11 @@ class $nodeModify(CommentsModPopup, ModPopup) {
         };
 
         return Err("Could not cast this to FLAlertLayer");
+    };
+
+    arc::Future<WebRes> checkModIndex(std::string modID) {
+        auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID));
+        co_return webres::processResp(res);
     };
 };
 

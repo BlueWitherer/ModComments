@@ -28,7 +28,15 @@ matjson::Value matjson::Serialize<WebRes>::toJson(WebRes const& value) {
 
 WebRes::WebRes(matjson::Value payload, std::string error, uint16_t code) : m_payload(std::move(payload)), m_error(std::move(error)), m_code(code) {};
 
-matjson::Value const& WebRes::getPayloadValue() const noexcept {
+matjson::Value& WebRes::getPayloadValue() & noexcept {
+    return m_payload;
+};
+
+matjson::Value&& WebRes::getPayloadValue() && noexcept {
+    return std::move(m_payload);
+};
+
+matjson::Value const& WebRes::getPayloadValue() const& noexcept {
     return m_payload;
 };
 
@@ -57,9 +65,10 @@ WebRes webres::processResp(geode::utils::web::WebResponse const& res) {
     auto jsonRes = res.json();
     if (jsonRes.isErr()) return fallback(std::move(jsonRes).unwrapErr());
 
-    auto const json = std::move(jsonRes).unwrap();
+    auto json = std::move(jsonRes).unwrap();
+    if (!json.contains("code") || !json["code"].isNumber()) json["code"] = res.code();
 
-    auto resp = json.as<WebRes>();
+    auto resp = std::move(json).as<WebRes>();
     if (resp.isErr()) return fallback(std::move(resp).unwrapErr());
 
     return std::move(resp).unwrap();

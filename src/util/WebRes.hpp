@@ -18,7 +18,10 @@ namespace cw::mod_cmmts {
             return m_payload.as<T>();
         };
 
-        matjson::Value const& getPayloadValue() const noexcept;
+        matjson::Value& getPayloadValue() & noexcept;
+        matjson::Value&& getPayloadValue() && noexcept;
+        matjson::Value const& getPayloadValue() const& noexcept;
+
         geode::ZStringView getError() const noexcept;
         uint16_t getCode() const noexcept;
 
