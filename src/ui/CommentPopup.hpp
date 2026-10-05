@@ -19,6 +19,7 @@ namespace cw::mod_cmmts {
 
     enum class CommentVote : int8_t {
         Dislike = -1,
+        None = 0,
         Like = 1,
     };
 

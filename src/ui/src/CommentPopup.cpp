@@ -65,9 +65,11 @@ void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, Comm
 
     btn = Button::createWithSpriteFrameName(
         like ? "GJ_likesIcon_001.png" : "GJ_dislikesIcon_001.png",
-        [this, label, type, like](auto) {
-            log::info("my vote is {}", m_comment.myVote);
-            if (m_comment.myVote == (like ? 1 : -1)) return;
+        [this, label, t = type, like](auto) {
+            auto type = t;
+
+            log::trace("my vote is {}", m_comment.myVote);
+            if (m_comment.myVote == (like ? 1 : -1)) type = CommentVote::None;
 
             m_likeBtn->setEnabled(false);
             m_dislikeBtn->setEnabled(false);
