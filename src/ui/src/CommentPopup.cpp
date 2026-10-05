@@ -55,13 +55,33 @@ matjson::Value matjson::Serialize<CommentRequest>::toJson(CommentRequest const& 
     return out;
 };
 
+void CommentItem::addVoteNodes(CCNode* to, Label*& label, CommentVote type) {
+    auto like = type == CommentVote::Like;
+
+    auto btn = Button::createWithSpriteFrameName(
+        like ? "GJ_likesIcon_001.png" : "GJ_dislikesIcon_001.png",
+        [this, like](auto) {
+            like ? onLike() : onDislike();
+        });
+    btn->setID(like ? "like-btn" : "dislike-btn");
+    btn->setScale(0.625f);
+
+    label = Label::create(fmt::format("{}", like ? m_comment.likes : m_comment.dislikes), "bigFont.fnt");
+    label->setScale(0.375f);
+
+    to->addChild(label);
+    to->addChild(btn);
+
+    to->updateLayout();
+};
+
 bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
     m_comment = std::move(cmmt);
 
     if (!CCNode::init()) return false;
 
     setAnchorPoint({0.5, 0});
-    setContentSize({width, 45.f});
+    setContentSize({width, 47.5f});
 
     auto colors = ColorProvider::get();
 
@@ -129,6 +149,21 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
 
     addChildAtPosition(m_contentLabel, Anchor::TopLeft, {27.5f, -25.f});
 
+    auto actionMenuLayout = RowLayout::create()
+                                ->setGap(2.5f)
+                                ->setAutoScale(false)
+                                ->setAxisReverse(true)
+                                ->setAxisAlignment(AxisAlignment::End)
+                                ->setAutoGrowAxis(0.f)
+                                ->setGrowCrossAxis(true);
+
+    auto actionMenu = CCNode::create();
+    actionMenu->setID("action-container");
+    actionMenu->setAnchorPoint({1, 1});
+    actionMenu->setLayout(actionMenuLayout);
+
+    addChildAtPosition(actionMenu, Anchor::TopRight, {-3.75f, -3.75f});
+
     Button* actionBtn = nullptr;
 
     if (isSelf()) {
@@ -149,10 +184,14 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
             });
         actionBtn->setID("report-comment-btn");
     };
+    actionBtn->setScale(0.925f);
 
     cue::rescaleToMatch(actionBtn, 20.f);
 
-    addChildAtPosition(actionBtn, Anchor::TopRight, actionBtn->getScaledContentSize() * -0.675f);
+    actionMenu->addChild(actionBtn);
+
+    addVoteNodes(actionMenu, m_dislikeLabel, CommentVote::Dislike);
+    addVoteNodes(actionMenu, m_likeLabel, CommentVote::Like);
 
     auto const timePosted = *asp::SystemTime::now().durationSince(m_comment.created);
     std::string timeTxt = (timePosted.seconds() < 3) ? "Just now" : fmt::format("{} ago", timePosted.toHumanString());
@@ -169,6 +208,10 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
 
     return true;
 };
+
+void CommentItem::onLike() {};
+
+void CommentItem::onDislike() {};
 
 bool CommentItem::isSelf() const noexcept {
     return GJAccountManager::sharedState()->m_accountID == m_comment.author.id;
@@ -232,7 +275,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_commentList->setAnchorPoint({0.5, 1});
     m_commentList->ignoreAnchorPointForPosition(false);
 
-    auto commentListLayout = static_cast<SimpleColumnLayout*>(ScrollLayer::createDefaultListLayout())
+    auto commentListLayout = static_cast<SimpleColumnLayout*>(ScrollLayer::createDefaultListLayout(3.75f))
                                  ->setMainAxisDirection(AxisDirection::BottomToTop);
 
     m_commentList->m_contentLayer->setLayout(commentListLayout);
@@ -352,6 +395,8 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 };
 
 void CommentsPopup::onSend(Button* sender) {
+    m_inputBox->defocus();
+
     auto elapsed = asp::Instant::now().durationSince(s_lastComment).seconds();
     if (elapsed < impl::g_commentWait) {
         createQuickPopup(

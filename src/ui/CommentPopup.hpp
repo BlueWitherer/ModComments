@@ -17,6 +17,11 @@ namespace cw::mod_cmmts {
         Report,
     };
 
+    enum class CommentVote : int8_t {
+        Dislike = -1,
+        Like = 1,
+    };
+
     namespace ui {
         class CommentReportPopup final : public geode::Popup {
         protected:
@@ -35,7 +40,19 @@ namespace cw::mod_cmmts {
 
             geode::Label* m_contentLabel = nullptr;
 
+            geode::Label* m_likeLabel = nullptr;
+            geode::Label* m_dislikeLabel = nullptr;
+
+            geode::async::TaskHolder<WebRes> m_voteTask;
+
+            arc::Future<WebRes> sendVote(CommentVote vote);
+
+            void addVoteNodes(cocos2d::CCNode* to, geode::Label*& label, CommentVote type);
+
         protected:
+            void onLike();
+            void onDislike();
+
             bool isSelf() const noexcept;
 
             bool init(Comment cmmt, float width, bool geodeTheme);
