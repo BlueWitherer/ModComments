@@ -33,6 +33,9 @@ namespace cw::mod_cmmts {
         std::string modID;
         std::string content;
         asp::SystemTime created;
+        uint64_t likes = 0;
+        uint64_t dislikes = 0;
+        int8_t myVote = 0;
     };
 
     struct CommentReport final {

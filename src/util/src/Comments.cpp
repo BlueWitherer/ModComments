@@ -82,10 +82,14 @@ Result<Comment> matjson::Serialize<Comment>::fromJson(matjson::Value const& valu
     GEODE_UNWRAP_INTO(out.author, value["author"].as<CommentUser>());
     GEODE_UNWRAP_INTO(out.modID, value["mod"].asString());
     GEODE_UNWRAP_INTO(out.content, value["content"].asString());
-    auto const& createdAt = value.contains("created_at") ? value["created_at"] : value["created"];
-    GEODE_UNWRAP_INTO(auto uTime, createdAt.asInt());
 
+    GEODE_UNWRAP_INTO(auto uTime, value["created_at"].asInt());
     out.created = asp::SystemTime::fromUnix(uTime);
+
+    GEODE_UNWRAP_INTO(out.likes, value["likes"].asUInt());
+    GEODE_UNWRAP_INTO(out.dislikes, value["dislikes"].asUInt());
+
+    GEODE_UNWRAP_INTO_IF_OK(out.myVote, value["voted"].asInt());
 
     return Ok(std::move(out));
 };
@@ -108,9 +112,8 @@ Result<CommentReport> matjson::Serialize<CommentReport>::fromJson(matjson::Value
     GEODE_UNWRAP_INTO(out.author, value["author"].as<CommentUser>());
     GEODE_UNWRAP_INTO(out.comment, value["comment"].as<Comment>());
     GEODE_UNWRAP_INTO(out.reason, value["reason"].asString());
-    auto const& createdAt = value.contains("created_at") ? value["created_at"] : value["created"];
-    GEODE_UNWRAP_INTO(auto uTime, createdAt.asInt());
 
+    GEODE_UNWRAP_INTO(auto uTime, value["created_at"].asInt());
     out.created = asp::SystemTime::fromUnix(uTime);
 
     return Ok(std::move(out));

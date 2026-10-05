@@ -18,6 +18,14 @@ namespace cw::mod_cmmts {
     };
 
     namespace ui {
+        class CommentReportPopup final : public geode::Popup {
+        protected:
+            bool init(Comment const& cmmt);
+
+        public:
+            static CommentReportPopup* create(Comment const& cmmt);
+        };
+
         class CommentItem final : public cocos2d::CCNode {
             using Callback = geode::Function<void(CommentAction, Comment const&)>;
 
@@ -36,6 +44,8 @@ namespace cw::mod_cmmts {
             static CommentItem* create(Comment cmmt, float width, bool geodeTheme);
 
             void setActionCallback(Callback&& cb);
+
+            Comment const& getComment() const noexcept;
         };
 
         class CommentsPopup final : public geode::Popup {
@@ -51,6 +61,8 @@ namespace cw::mod_cmmts {
 
             geode::TextInput* m_inputBox = nullptr;
 
+            geode::Label* m_errLabel = nullptr;
+
             geode::Button* m_refreshBtn = nullptr;
 
             geode::LoadingSpinner* m_loading = nullptr;
@@ -58,15 +70,23 @@ namespace cw::mod_cmmts {
             static asp::Instant s_lastComment;
 
             geode::async::TaskHolder<WebRes> m_commentTask;
+            geode::async::TaskHolder<WebRes> m_commentActionTask;
 
             arc::Future<WebRes> getComments();
             arc::Future<WebRes> sendComment();
+
             arc::Future<WebRes> deleteComment(uint64_t id);
+            arc::Future<WebRes> reportComment(uint64_t id, std::string reason);
 
             void refreshComments();
             bool showInput() const;
 
         protected:
+            void onDelete(Comment const& cmmt);
+            void onReport(Comment const& cmmt);
+
+            void onSend(geode::Button* sender);
+
             bool init(std::string modID, bool geodeTheme);
 
         public:

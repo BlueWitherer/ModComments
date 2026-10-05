@@ -155,27 +155,31 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
     addChildAtPosition(actionBtn, Anchor::TopRight, actionBtn->getScaledContentSize() * -0.675f);
 
     auto const timePosted = *asp::SystemTime::now().durationSince(m_comment.created);
-    std::string timeTxt = (timePosted.seconds() < 3) ? "Posted just now" : fmt::format("Posted {} ago", timePosted.toHumanString());
+    std::string timeTxt = (timePosted.seconds() < 3) ? "Just now" : fmt::format("{} ago", timePosted.toHumanString());
 
     auto time = Label::create(std::move(timeTxt), "chatFont.fnt");
     time->setID("date-created-label");
     time->setScale(0.5f);
     time->setAnchorPoint({1, 0});
     time->setAlignment(Label::Alignment::Right);
-    time->setColor({25, 25, 25});
-    time->setOpacity(250);
+    time->setColor({200, 200, 200});
+    time->setOpacity(200);
 
     addChildAtPosition(time, Anchor::BottomRight, {-5.f, 5.f});
 
     return true;
 };
 
+bool CommentItem::isSelf() const noexcept {
+    return GJAccountManager::sharedState()->m_accountID == m_comment.author.id;
+};
+
 void CommentItem::setActionCallback(Callback&& cb) {
     m_callback = std::move(cb);
 };
 
-bool CommentItem::isSelf() const noexcept {
-    return GJAccountManager::sharedState()->m_accountID == m_comment.author.id;
+Comment const& CommentItem::getComment() const noexcept {
+    return m_comment;
 };
 
 CommentItem* CommentItem::create(Comment cmmt, float width, bool geodeTheme) {
@@ -238,6 +242,15 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_commentList->m_contentLayer->updateLayout();
     m_commentList->scrollToTop();
 
+    m_errLabel = Label::create("Something went wrong...", "goldFont.fnt");
+    m_errLabel->setID("error-label");
+    m_errLabel->setZOrder(9);
+    m_errLabel->setScale(0.475f);
+    m_errLabel->setAlignment(Label::Alignment::Center);
+    m_errLabel->setVisible(false);
+
+    cmmtBorder->addChildAtPosition(m_errLabel, Anchor::Center);
+
     auto sendMenuLayout = RowLayout::create()
                               ->setAutoScale(false)
                               ->setAxisAlignment(AxisAlignment::Between);
@@ -258,47 +271,20 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     m_commentMenu->addChild(m_inputBox);
 
+    auto sendBtnSpr = EditorButtonSprite::createWithSpriteFrameName(
+        "GJ_chatBtn_01_001.png",
+        0.925f,
+        geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Green);
+
+    if (auto ico = sendBtnSpr->getChildByType<CCSprite>(0)) {
+        ico->setFlipX(true);
+        ico->setRotation(-90);
+    };
+
     auto sendBtn = Button::createWithNode(
-        EditorButtonSprite::createWithSpriteFrameName(
-            "GJ_chatBtn_01_001.png",
-            0.925f,
-            geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Green),
+        sendBtnSpr,
         [this](Button* sender) {
-            auto elapsed = asp::Instant::now().durationSince(s_lastComment).seconds();
-            if (elapsed < impl::g_commentWait) {
-                createQuickPopup(
-                    "Slow Down!",
-                    fmt::format("You must <co>wait {} seconds before sending your next comment</c>!", impl::g_commentWait - elapsed),
-                    "OK",
-                    nullptr,
-                    nullptr);
-
-                return;
-            };
-
-            if (str::trim(m_inputBox->getString()).empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
-
-            sender->setEnabled(false);
-            if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({50, 50, 50});
-
-            m_refreshBtn->setVisible(false);
-
-            m_commentTask.spawn(
-                sendComment(),
-                [this, sender](WebRes res) {
-                    if (res.isOk()) {
-                        s_lastComment = asp::Instant::now();
-
-                        m_inputBox->setString("", false);
-                        refreshComments();
-                    } else if (res.isErr()) {
-                        m_refreshBtn->setVisible(true);
-                        Notification::create(fmt::format("Error {}", res.getCode()), NotificationIcon::Error)->show();
-                    };
-
-                    if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({255, 255, 255});
-                    sender->setEnabled(true);
-                });
+            onSend(sender);
         });
     sendBtn->setID("send-comment-btn");
 
@@ -307,6 +293,14 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_commentMenu->addChild(sendBtn);
 
     m_commentMenu->updateLayout();
+
+    addEventListener(
+        KeyboardInputEvent(enumKeyCodes::KEY_Enter),
+        [this, sendBtn](KeyboardInputData& data) {
+            if (data.action == KeyboardInputData::Action::Press) {
+                if (m_inputBox->getInputNode()->m_selected) onSend(sendBtn);
+            };
+        });
 
     m_commentMenu->setVisible(showInput());
 
@@ -357,9 +351,85 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     return true;
 };
 
-arc::Future<WebRes> CommentsPopup::getComments() {
+void CommentsPopup::onSend(Button* sender) {
+    auto elapsed = asp::Instant::now().durationSince(s_lastComment).seconds();
+    if (elapsed < impl::g_commentWait) {
+        createQuickPopup(
+            "Slow Down!",
+            fmt::format("You must <co>wait {} seconds before sending your next comment</c>!", impl::g_commentWait - elapsed),
+            "OK",
+            nullptr,
+            nullptr);
+
+        return;
+    };
+
+    if (str::trim(m_inputBox->getString()).empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
+
+    sender->setEnabled(false);
+    if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({50, 50, 50});
+
+    m_refreshBtn->setVisible(false);
+
+    m_commentTask.spawn(
+        sendComment(),
+        [this, sender](WebRes res) {
+            if (res.isOk()) {
+                s_lastComment = asp::Instant::now();
+
+                m_inputBox->setString("", false);
+                refreshComments();
+            } else if (res.isErr()) {
+                m_refreshBtn->setVisible(true);
+                Notification::create(fmt::format("Error {}", res.getCode()), NotificationIcon::Error)->show();
+            };
+
+            if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({255, 255, 255});
+            sender->setEnabled(true);
+        });
+};
+
+arc::Future<WebRes> CommentsPopup::deleteComment(uint64_t id) {
     CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
 
+    auto req = (co_await request::withAuthCo(std::move(token)))
+                   .param("comment", id);
+
+    co_return webres::processResp(co_await req.send("DELETE", "/v1/comments/delete"_api));
+};
+
+arc::Future<WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason) {
+    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+
+    matjson::Value body;
+    body["comment"] = id;
+    body["reason"] = std::move(reason);
+
+    auto req = (co_await request::withAuthCo(std::move(token)))
+                   .bodyJSON(body);
+
+    co_return webres::processResp(co_await req.post("/v1/reports/send"_api));
+};
+
+void CommentsPopup::onDelete(Comment const& cmmt) {
+    createQuickPopup(
+        "Delete Comment",
+        "<cr>Delete</c> this comment?",
+        "Cancel",
+        "Yes",
+        [this, &cmmt](auto, bool ok) {
+            if (ok) m_commentActionTask.spawn(
+                deleteComment(cmmt.id),
+                [this](WebRes res) {
+                    if (res.isOk()) return refreshComments();
+                    Notification::create(fmt::format("Failed to delete comment ({})", res.getCode()), NotificationIcon::Error)->show();
+                });
+        });
+};
+
+void CommentsPopup::onReport(Comment const& cmmt) {};
+
+arc::Future<WebRes> CommentsPopup::getComments() {
     auto req = request::base()
                    .param("mod", m_modID)
                    .param("page", m_page);
@@ -392,6 +462,8 @@ void CommentsPopup::refreshComments() {
 
     m_loading->setVisible(true);
 
+    m_errLabel->setVisible(false);
+
     m_commentList->m_contentLayer->removeAllChildren();
 
     m_commentTask.spawn(
@@ -419,12 +491,12 @@ void CommentsPopup::refreshComments() {
                         std::move(cmmtRes).unwrap(),
                         m_commentList->getScaledContentWidth(),
                         m_geodeTheme);
-                    cell->setActionCallback([](CommentAction act, Comment const& cmmt) {
+                    cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
                         switch (act) {
                             default: return;
 
-                            case CommentAction::Delete: return log::error("delete callback!");
-                            case CommentAction::Report: return log::error("report callback!");
+                            case CommentAction::Delete: return onDelete(cmmt);
+                            case CommentAction::Report: return onReport(cmmt);
                         };
                     });
 
@@ -433,10 +505,12 @@ void CommentsPopup::refreshComments() {
 
                 m_commentList->m_contentLayer->updateLayout();
                 m_commentList->scrollToTop();
-            };
 
-            m_commentList->setVisible(true);
-            m_commentMenu->setVisible(showInput());
+                m_commentList->setVisible(true);
+                m_commentMenu->setVisible(showInput());
+            } else {
+                m_errLabel->setVisible(true);
+            };
 
             m_refreshBtn->setVisible(true);
 
