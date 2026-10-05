@@ -56,15 +56,19 @@ Result<CommentUser> matjson::Serialize<CommentUser>::fromJson(matjson::Value con
 
 matjson::Value matjson::Serialize<CommentUser>::toJson(CommentUser const& value) {
     Value out;
+    out = matjson::Serialize<UserIcons>::toJson(
+        {
+            value.icon,
+            value.iconType,
+            value.color1,
+            value.color2,
+            value.colorGlow,
+            value.useGlow,
+        });
+
     out["id"] = value.id;
     out["username"] = value.username;
     out["staff"] = value.staff;
-    out["icon"] = value.icon;
-    out["icon_type"] = static_cast<int8_t>(value.iconType);
-    out["color1"] = value.color1;
-    out["color2"] = value.color2;
-    out["color_glow"] = value.colorGlow;
-    out["use_glow"] = value.useGlow;
     out["gd_mod"] = static_cast<int>(value.gdMod);
     out["created_at"] = value.created.timeSinceEpoch().seconds();
 

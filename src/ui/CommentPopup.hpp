@@ -12,10 +12,18 @@ namespace cw::mod_cmmts {
         UserIcons icons;
     };
 
+    enum class CommentAction : uint8_t {
+        Delete,
+        Report,
+    };
+
     namespace ui {
         class CommentItem final : public cocos2d::CCNode {
+            using Callback = geode::Function<void(CommentAction, Comment const&)>;
+
         private:
             Comment m_comment;
+            Callback m_callback = nullptr;
 
             geode::Label* m_contentLabel = nullptr;
 
@@ -26,12 +34,17 @@ namespace cw::mod_cmmts {
 
         public:
             static CommentItem* create(Comment cmmt, float width, bool geodeTheme);
+
+            void setActionCallback(Callback&& cb);
         };
 
         class CommentsPopup final : public geode::Popup {
         private:
             std::string m_modID;
             bool m_geodeTheme = false;
+
+            uint16_t m_page = 1;
+            uint16_t m_maxPage = m_page;
 
             geode::ScrollLayer* m_commentList = nullptr;
             cocos2d::CCNode* m_commentMenu = nullptr;
@@ -48,6 +61,7 @@ namespace cw::mod_cmmts {
 
             arc::Future<WebRes> getComments();
             arc::Future<WebRes> sendComment();
+            arc::Future<WebRes> deleteComment(uint64_t id);
 
             void refreshComments();
             bool showInput() const;
