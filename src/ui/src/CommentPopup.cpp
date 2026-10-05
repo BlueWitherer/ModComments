@@ -55,21 +55,51 @@ matjson::Value matjson::Serialize<CommentRequest>::toJson(CommentRequest const& 
     return out;
 };
 
-void CommentItem::addVoteNodes(CCNode* to, Label*& label, CommentVote type) {
+void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, CommentVote type) {
     auto like = type == CommentVote::Like;
-
-    auto btn = Button::createWithSpriteFrameName(
-        like ? "GJ_likesIcon_001.png" : "GJ_dislikesIcon_001.png",
-        [this, like](auto) {
-            like ? onLike() : onDislike();
-        });
-    btn->setID(like ? "like-btn" : "dislike-btn");
-    btn->setScale(0.625f);
 
     label = Label::create(fmt::format("{}", like ? m_comment.likes : m_comment.dislikes), "bigFont.fnt");
     label->setScale(0.375f);
 
     to->addChild(label);
+
+    btn = Button::createWithSpriteFrameName(
+        like ? "GJ_likesIcon_001.png" : "GJ_dislikesIcon_001.png",
+        [this, label, type, like](auto) {
+            log::info("my vote is {}", m_comment.myVote);
+            if (m_comment.myVote == (like ? 1 : -1)) return;
+
+            m_likeBtn->setEnabled(false);
+            m_dislikeBtn->setEnabled(false);
+
+            if ((like ? m_comment.likes : m_comment.dislikes) > 0) (like ? m_likeLabel : m_dislikeLabel)->setText(numToString((like ? m_comment.likes : m_comment.dislikes) + 1));
+            if ((like ? m_comment.dislikes : m_comment.likes) > 0) (like ? m_dislikeLabel : m_likeLabel)->setText(numToString((like ? m_comment.dislikes : m_comment.likes) - 1));
+
+            m_voteTask.spawn(
+                sendVote(type),
+                [this, label, like](WebRes res) {
+                    auto const fallback = [this, res, &label, like](std::string_view err) {
+                        log::error("{}: {}", res.getCode(), err);
+                        label->setText(numToString((like ? m_comment.likes : m_comment.dislikes)));
+                    };
+
+                    if (res.isErr()) return fallback(res.getError());
+
+                    auto cmmtRes = res.getPayload<Comment>();
+                    if (cmmtRes.isErr()) return fallback(cmmtRes.unwrapErr());
+
+                    m_comment = std::move(cmmtRes).unwrap();
+
+                    m_likeLabel->setText(numToString(m_comment.likes));
+                    m_dislikeLabel->setText(numToString(m_comment.dislikes));
+
+                    m_likeBtn->setEnabled(true);
+                    m_dislikeBtn->setEnabled(true);
+                });
+        });
+    btn->setID(like ? "like-btn" : "dislike-btn");
+    btn->setScale(0.625f);
+
     to->addChild(btn);
 
     to->updateLayout();
@@ -190,8 +220,8 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
 
     actionMenu->addChild(actionBtn);
 
-    addVoteNodes(actionMenu, m_dislikeLabel, CommentVote::Dislike);
-    addVoteNodes(actionMenu, m_likeLabel, CommentVote::Like);
+    addVoteNodes(actionMenu, m_dislikeBtn, m_dislikeLabel, CommentVote::Dislike);
+    addVoteNodes(actionMenu, m_likeBtn, m_likeLabel, CommentVote::Like);
 
     auto const timePosted = *asp::SystemTime::now().durationSince(m_comment.created);
     std::string timeTxt = (timePosted.seconds() < 3) ? "Just now" : fmt::format("{} ago", timePosted.toHumanString());
@@ -209,9 +239,18 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
     return true;
 };
 
-void CommentItem::onLike() {};
+arc::Future<WebRes> CommentItem::sendVote(CommentVote vote) {
+    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
 
-void CommentItem::onDislike() {};
+    matjson::Value body;
+    body["comment"] = m_comment.id;
+    body["vote"] = static_cast<int8_t>(vote);
+
+    auto req = (co_await request::withAuthCo(std::move(token)))
+                   .bodyJSON(body);
+
+    co_return webres::processResp(co_await req.put("/v1/comments/vote"_api));
+};
 
 bool CommentItem::isSelf() const noexcept {
     return GJAccountManager::sharedState()->m_accountID == m_comment.author.id;

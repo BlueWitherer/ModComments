@@ -101,6 +101,9 @@ matjson::Value matjson::Serialize<Comment>::toJson(Comment const& value) {
     out["mod"] = value.modID;
     out["content"] = value.content;
     out["created_at"] = value.created.timeSinceEpoch().seconds();
+    out["likes"] = value.likes;
+    out["dislikes"] = value.dislikes;
+    out["voted"] = value.myVote;
 
     return out;
 };

@@ -40,14 +40,17 @@ namespace cw::mod_cmmts {
 
             geode::Label* m_contentLabel = nullptr;
 
-            geode::Label* m_likeLabel = nullptr;
-            geode::Label* m_dislikeLabel = nullptr;
+            geode::Button* m_likeBtn = nullptr;
+            geode::Button* m_dislikeBtn = nullptr;
+
+            geode::Ref<geode::Label> m_likeLabel = nullptr;
+            geode::Ref<geode::Label> m_dislikeLabel = nullptr;
 
             geode::async::TaskHolder<WebRes> m_voteTask;
 
             arc::Future<WebRes> sendVote(CommentVote vote);
 
-            void addVoteNodes(cocos2d::CCNode* to, geode::Label*& label, CommentVote type);
+            void addVoteNodes(cocos2d::CCNode* to, geode::Button*& btn, geode::Ref<geode::Label>& label, CommentVote type);
 
         protected:
             void onLike();
