@@ -25,70 +25,6 @@ namespace cw::mod_cmmts {
     };
 
     namespace ui {
-        class CommentReportPopup final : public geode::Popup {
-        protected:
-            bool init(Comment const& cmmt);
-
-        public:
-            static CommentReportPopup* create(Comment const& cmmt);
-        };
-
-        class CommentItem final : public cocos2d::CCNode {
-            using Callback = geode::Function<void(CommentAction, Comment const&)>;
-
-        private:
-            Comment m_comment;
-            Callback m_callback = nullptr;
-
-            geode::Label* m_contentLabel = nullptr;
-
-            geode::Button* m_likeBtn = nullptr;
-            geode::Button* m_dislikeBtn = nullptr;
-
-            geode::Ref<geode::Label> m_likeLabel = nullptr;
-            geode::Ref<geode::Label> m_dislikeLabel = nullptr;
-
-            geode::async::TaskHolder<WebRes> m_voteTask;
-
-            arc::Future<WebRes> sendVote(CommentVote vote);
-
-            void addVoteNodes(cocos2d::CCNode* to, geode::Button*& btn, geode::Ref<geode::Label>& label, CommentVote type);
-
-        protected:
-            void onLike();
-            void onDislike();
-
-            void voteCallback(CommentVote t);
-
-            bool isSelf() const noexcept;
-
-            bool init(Comment cmmt, float width, bool geodeTheme);
-
-        public:
-            static CommentItem* create(Comment cmmt, float width, bool geodeTheme);
-
-            void setActionCallback(Callback&& cb);
-
-            Comment const& getComment() const noexcept;
-        };
-
-        class CommentModNode final : public cocos2d::CCNode {
-        private:
-            std::string m_id;
-
-            GeodeMod m_data;
-            bool m_dataOk = false;
-
-            std::string getModName() const;
-            std::vector<std::string> getModDevs() const;
-
-        protected:
-            bool init(std::string id, std::optional<GeodeMod> mod);
-
-        public:
-            static CommentModNode* create(std::string id, std::optional<GeodeMod> mod = std::nullopt);
-        };
-
         class CommentsPopup final : public geode::Popup {
             struct LinkButton final {
                 std::string id;
@@ -99,6 +35,10 @@ namespace cw::mod_cmmts {
         private:
             std::string m_modID;
             bool m_geodeTheme = false;
+
+            geode::LoadingSpinner* m_geodeLoading = nullptr;
+
+            static geode::utils::StringMap<GeodeMod> s_indexedMods;
 
             uint16_t m_page = 1;
             uint16_t m_maxPage = m_page;
@@ -115,6 +55,7 @@ namespace cw::mod_cmmts {
             geode::LoadingSpinner* m_loading = nullptr;
 
             static asp::Instant s_lastComment;
+            static asp::Instant s_lastRefresh;
 
             geode::async::TaskHolder<WebRes> m_commentTask;
             geode::async::TaskHolder<WebRes> m_commentActionTask;
