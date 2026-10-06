@@ -325,10 +325,6 @@ std::string CommentModNode::getModName() const {
     return m_dataOk ? m_data.versions[0].name : Loader::get()->getInstalledMod(m_id)->getName().c_str();
 };
 
-std::string CommentModNode::getModVersion() const {
-    return m_dataOk ? fmt::format("v{}", m_data.versions[0].version) : Loader::get()->getInstalledMod(m_id)->getVersion().toVString();
-};
-
 std::vector<std::string> CommentModNode::getModDevs() const {
     std::vector<std::string> out;
 
@@ -352,8 +348,14 @@ bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
 
     if (!CCNode::init()) return false;
 
-    setAnchorPoint({0.5, 0});
-    setContentSize({50.f, 65.f});
+    auto layout = RowLayout::create()
+                      ->setGap(3.75f)
+                      ->setAutoScale(false)
+                      ->setAutoGrowAxis(1.25f);
+
+    setAnchorPoint({0.5, 1});
+    setContentSize({1.25f, 30.f});
+    setLayout(layout);
 
     return true;
 };
@@ -374,7 +376,7 @@ asp::Instant CommentsPopup::s_lastComment;
 bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_modID = std::move(modID);
 
-    if (!Popup::init(415.f, 265.f, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
+    if (!Popup::init(425.f, 265.f, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
     setID(fmt::format("popup-{}", modID));
     setTitle("Loading...");
@@ -387,7 +389,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
         0.825f);
 
     auto cmmtBorder = cue::createBackground(
-        {m_mainLayer->getScaledContentWidth() - 65.f, m_mainLayer->getScaledContentHeight() - 80.f},
+        {m_mainLayer->getScaledContentWidth() - 75.f, m_mainLayer->getScaledContentHeight() - 40.f},
         {
             .opacity = 255,
             .texture = "geode.loader/black-square.png",
@@ -492,7 +494,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     linkBtnMenu->setZOrder(1);
     linkBtnMenu->setLayout(linkBtnMenuLayout);
 
-    m_mainLayer->addChildAtPosition(linkBtnMenu, Anchor::BottomLeft, {5.f, 5.f});
+    m_mainLayer->addChildAtPosition(linkBtnMenu, Anchor::BottomLeft, {7.5f, 7.5f});
 
     auto linkBtns = std::array{
         LinkButton{

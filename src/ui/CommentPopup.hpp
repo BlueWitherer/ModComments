@@ -80,7 +80,6 @@ namespace cw::mod_cmmts {
             bool m_dataOk = false;
 
             std::string getModName() const;
-            std::string getModVersion() const;
             std::vector<std::string> getModDevs() const;
 
         protected:
