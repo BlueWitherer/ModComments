@@ -1,6 +1,7 @@
 #pragma once
 
 #include <util/Comments.hpp>
+#include <util/GeodeMod.hpp>
 #include <util/WebRes.hpp>
 
 #include <Geode/Geode.hpp>
@@ -57,6 +58,8 @@ namespace cw::mod_cmmts {
             void onLike();
             void onDislike();
 
+            void voteCallback(CommentVote t);
+
             bool isSelf() const noexcept;
 
             bool init(Comment cmmt, float width, bool geodeTheme);
@@ -69,7 +72,31 @@ namespace cw::mod_cmmts {
             Comment const& getComment() const noexcept;
         };
 
+        class CommentModNode final : public cocos2d::CCNode {
+        private:
+            std::string m_id;
+
+            GeodeMod m_data;
+            bool m_dataOk = false;
+
+            std::string getModName() const;
+            std::string getModVersion() const;
+            std::vector<std::string> getModDevs() const;
+
+        protected:
+            bool init(std::string id, std::optional<GeodeMod> mod);
+
+        public:
+            static CommentModNode* create(std::string id, std::optional<GeodeMod> mod = std::nullopt);
+        };
+
         class CommentsPopup final : public geode::Popup {
+            struct LinkButton final {
+                std::string id;
+                std::string sprite;
+                geode::Button::ButtonCallback callback;
+            };
+
         private:
             std::string m_modID;
             bool m_geodeTheme = false;
@@ -98,6 +125,10 @@ namespace cw::mod_cmmts {
 
             arc::Future<WebRes> deleteComment(uint64_t id);
             arc::Future<WebRes> reportComment(uint64_t id, std::string reason);
+
+            geode::async::TaskHolder<WebRes> m_geodeTask;
+
+            arc::Future<WebRes> getGeodeData();
 
             void refreshComments();
             bool showInput() const;

@@ -65,39 +65,9 @@ void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, Comm
 
     btn = Button::createWithSpriteFrameName(
         like ? "GJ_likesIcon_001.png" : "GJ_dislikesIcon_001.png",
-        [this, label, t = type, like](auto) {
-            auto type = t;
-
-            log::trace("my vote is {}", m_comment.myVote);
-            if (m_comment.myVote == (like ? 1 : -1)) type = CommentVote::None;
-
-            m_likeBtn->setEnabled(false);
-            m_dislikeBtn->setEnabled(false);
-
-            if ((like ? m_comment.likes : m_comment.dislikes) > 0) (like ? m_likeLabel : m_dislikeLabel)->setText(numToString((like ? m_comment.likes : m_comment.dislikes) + 1));
-            if ((like ? m_comment.dislikes : m_comment.likes) > 0) (like ? m_dislikeLabel : m_likeLabel)->setText(numToString((like ? m_comment.dislikes : m_comment.likes) - 1));
-
-            m_voteTask.spawn(
-                sendVote(type),
-                [this, label, like](WebRes res) {
-                    auto const fallback = [this, res, &label, like](std::string_view err) {
-                        log::error("{}: {}", res.getCode(), err);
-                        label->setText(numToString((like ? m_comment.likes : m_comment.dislikes)));
-                    };
-
-                    if (res.isErr()) return fallback(res.getError());
-
-                    auto cmmtRes = res.getPayload<Comment>();
-                    if (cmmtRes.isErr()) return fallback(cmmtRes.unwrapErr());
-
-                    m_comment = std::move(cmmtRes).unwrap();
-
-                    m_likeLabel->setText(numToString(m_comment.likes));
-                    m_dislikeLabel->setText(numToString(m_comment.dislikes));
-
-                    m_likeBtn->setEnabled(true);
-                    m_dislikeBtn->setEnabled(true);
-                });
+        [this, type](auto) {
+            log::debug("current vote is {}", m_comment.myVote);
+            voteCallback((m_comment.myVote == static_cast<int8_t>(type)) ? CommentVote::None : type);
         });
     btn->setID(like ? "like-btn" : "dislike-btn");
     btn->setScale(0.625f);
@@ -241,6 +211,80 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
     return true;
 };
 
+void CommentItem::voteCallback(CommentVote type) {
+    auto like = type == CommentVote::Like;
+
+    auto prevVote = m_comment.myVote;
+
+    auto prevLikes = m_comment.likes;
+    auto prevDislikes = m_comment.dislikes;
+
+    if (prevVote == (like ? 1 : -1)) type = CommentVote::None;
+
+    switch (type) {                              // this part is annoying and i'm stupid so i need my stupid baby comments
+        case CommentVote::Like: {                // <- is gonna like!
+            if (prevVote == 1) {                 // if already liked...
+                if (prevLikes > 0) prevLikes--;  // remove da like
+            } else {
+                if (prevVote == -1 && prevDislikes > 0) prevDislikes--;
+                prevLikes++;  // otherwise add dat like, and remove dislike if previously disliked
+            };
+        } break;
+
+        case CommentVote::Dislike: {                   // <- is gonna DISlike!
+            if (prevVote == -1) {                      // if already disliked...
+                if (prevDislikes > 0) prevDislikes--;  // remove da dislike
+            } else {
+                if (prevVote == 1 && prevLikes > 0) prevLikes--;
+                prevDislikes++;  // otherwise add dat dislike, and remove like if previously liked
+            };
+        } break;
+
+        case CommentVote::None: {                             // is unliking entirely
+            if (prevVote == 1 && prevLikes > 0) {             // if already liked...
+                prevLikes--;                                  // remove da like
+            } else if (prevVote == -1 && prevDislikes > 0) {  // if already disliked...
+                prevDislikes--;                               // remove da dislike
+            };
+        } break;
+    };
+
+    m_likeLabel->setText(numToString(prevLikes));
+    m_dislikeLabel->setText(numToString(prevDislikes));
+
+    m_likeBtn->setEnabled(false);
+    m_dislikeBtn->setEnabled(false);
+
+    m_voteTask.spawn(
+        sendVote(type),
+        [this, prevLikes, prevDislikes, prevVote, like](WebRes res) {
+            auto const completed = [this]() {
+                m_likeLabel->setText(numToString(m_comment.likes));
+                m_dislikeLabel->setText(numToString(m_comment.dislikes));
+
+                m_likeBtn->setEnabled(true);
+                m_dislikeBtn->setEnabled(true);
+            };
+
+            auto const fallback = [&completed, res](std::string_view err) {
+                log::error("{}: {}", res.getCode(), err);
+                completed();
+            };
+
+            if (res.isErr()) return fallback(res.getError());
+
+            auto cmmtRes = res.getPayload<Comment>();
+            if (cmmtRes.isErr()) return fallback(cmmtRes.unwrapErr());
+
+            auto cmmt = std::move(cmmtRes).unwrap();
+            log::debug("setting current voted status to {}", cmmt.myVote);
+
+            m_comment = std::move(cmmt);
+
+            completed();
+        });
+};
+
 arc::Future<WebRes> CommentItem::sendVote(CommentVote vote) {
     CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
 
@@ -277,6 +321,54 @@ CommentItem* CommentItem::create(Comment cmmt, float width, bool geodeTheme) {
     return nullptr;
 };
 
+std::string CommentModNode::getModName() const {
+    return m_dataOk ? m_data.versions[0].name : Loader::get()->getInstalledMod(m_id)->getName().c_str();
+};
+
+std::string CommentModNode::getModVersion() const {
+    return m_dataOk ? fmt::format("v{}", m_data.versions[0].version) : Loader::get()->getInstalledMod(m_id)->getVersion().toVString();
+};
+
+std::vector<std::string> CommentModNode::getModDevs() const {
+    std::vector<std::string> out;
+
+    if (m_dataOk) {
+        out.reserve(m_data.developers.size());
+        for (auto const& dev : m_data.developers) out.push_back(dev.displayName);
+    } else {
+        out = Loader::get()->getInstalledMod(m_id)->getDevelopers();
+    };
+
+    return out;
+};
+
+bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
+    m_id = std::move(id);
+
+    if (mod.has_value()) {
+        m_dataOk = true;
+        m_data = std::move(mod).value();
+    };
+
+    if (!CCNode::init()) return false;
+
+    setAnchorPoint({0.5, 0});
+    setContentSize({50.f, 65.f});
+
+    return true;
+};
+
+CommentModNode* CommentModNode::create(std::string id, std::optional<GeodeMod> mod) {
+    auto ret = new CommentModNode();
+    if (ret->init(std::move(id), std::move(mod))) {
+        ret->autorelease();
+        return ret;
+    };
+
+    delete ret;
+    return nullptr;
+};
+
 asp::Instant CommentsPopup::s_lastComment;
 
 bool CommentsPopup::init(std::string modID, bool geodeTheme) {
@@ -285,7 +377,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     if (!Popup::init(415.f, 265.f, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
     setID(fmt::format("popup-{}", modID));
-    setTitle("Mod Comments");
+    setTitle("Loading...");
 
     setCloseButtonSpr(
         CircleButtonSprite::createWithSpriteFrameName(
@@ -295,15 +387,16 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
         0.825f);
 
     auto cmmtBorder = cue::createBackground(
-        {m_mainLayer->getScaledContentWidth() - 25.f, m_mainLayer->getScaledContentHeight() - 45.f},
+        {m_mainLayer->getScaledContentWidth() - 65.f, m_mainLayer->getScaledContentHeight() - 80.f},
         {
             .opacity = 255,
             .texture = "geode.loader/black-square.png",
             .zOrder = 1,
             .id = "",
         });
+    cmmtBorder->setAnchorPoint({0.5, 0});
 
-    m_mainLayer->addChildAtPosition(cmmtBorder, Anchor::Center, {0.f, -12.5f});
+    m_mainLayer->addChildAtPosition(cmmtBorder, Anchor::Bottom, {0.f, 8.75f});
 
     m_loading = LoadingSpinner::create(50.f);
     m_loading->setID("loading-circle");
@@ -388,18 +481,63 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     m_commentMenu->setVisible(showInput());
 
-    auto rulesBtn = Button::createWithNode(
-        CircleButtonSprite::createWithSpriteFrameName(
-            "geode.loader/news.png",
-            0.75f,
-            geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
-        [](Button* sender) {
-            popups::showRules();
-        });
-    rulesBtn->setID("comment-rules-btn");
-    rulesBtn->setScale(0.625f);
+    auto linkBtnMenuLayout = ColumnLayout::create()
+                                 ->setGap(2.f)
+                                 ->setAutoScale(false)
+                                 ->setAutoGrowAxis(0.f);
 
-    m_mainLayer->addChildAtPosition(rulesBtn, Anchor::BottomLeft, {}, false);
+    auto linkBtnMenu = CCNode::create();
+    linkBtnMenu->setID("link-container");
+    linkBtnMenu->setContentSize({12.5f, 1.25f});
+    linkBtnMenu->setZOrder(1);
+    linkBtnMenu->setLayout(linkBtnMenuLayout);
+
+    m_mainLayer->addChildAtPosition(linkBtnMenu, Anchor::BottomLeft, {5.f, 5.f});
+
+    auto linkBtns = std::array{
+        LinkButton{
+            "comment-rules-btn",
+            "accountBtn_myLists_001.png",
+            [](auto) {
+                popups::showRules();
+            },
+        },
+        LinkButton{
+            "discord-btn",
+            "gj_discordIcon_001.png",
+            [](auto) {
+                createQuickPopup(
+                    "Discord Community",
+                    "Join <cd>Cheeseworks</c>'s <cb>Discord server</c>?\n"
+                    "<cs>Get help, report bugs, and chat with other players!</c>",
+                    "Cancel",
+                    "OK",
+                    [](auto, bool ok) {
+                        if (ok) web::openLinkInBrowser("https://www.dsc.gg/cheeseworks");
+                    });
+            },
+        },
+        LinkButton{
+            "support-me-btn",
+            "geode.loader/gift.png",
+            [](auto) {
+                openSupportPopup(Mod::get());
+            },
+        },
+    };
+
+    for (auto& linkBtn : linkBtns) {
+        auto b = Button::createWithSpriteFrameName(
+            linkBtn.sprite,
+            std::move(linkBtn.callback));
+        b->setID(std::move(linkBtn.id));
+
+        cue::rescaleToMatch(b, 22.5f);
+
+        linkBtnMenu->addChild(b);
+    };
+
+    linkBtnMenu->updateLayout();
 
     m_refreshBtn = Button::createWithNode(
         CircleButtonSprite::createWithSpriteFrameName(
@@ -475,6 +613,10 @@ void CommentsPopup::onSend(Button* sender) {
         });
 };
 
+arc::Future<WebRes> CommentsPopup::getGeodeData() {
+    co_return webres::processResp(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modID)));
+};
+
 arc::Future<WebRes> CommentsPopup::deleteComment(uint64_t id) {
     CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
 
@@ -541,6 +683,8 @@ arc::Future<WebRes> CommentsPopup::sendComment() {
 };
 
 void CommentsPopup::refreshComments() {
+    m_title->setVisible(true);
+
     m_commentList->setVisible(false);
     m_commentMenu->setVisible(false);
 
@@ -601,6 +745,8 @@ void CommentsPopup::refreshComments() {
             m_refreshBtn->setVisible(true);
 
             m_loading->setVisible(false);
+
+            m_title->setVisible(false);
         });
 };
 
