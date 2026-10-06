@@ -144,8 +144,9 @@ StringMap<GeodeMod> CommentsPopup::s_indexedMods;
 
 bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_modID = std::move(modID);
+    m_geodeTheme = geodeTheme;
 
-    if (!Popup::init(425.f, 265.f, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
+    if (!Popup::init(425.f, 265.f, m_geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
     setID(fmt::format("popup-{}", modID));
 
@@ -153,7 +154,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
         CircleButtonSprite::createWithSpriteFrameName(
             "geode.loader/close.png",
             0.875f,
-            geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
+            m_geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
         0.825f);
 
     m_geodeLoading = LoadingSpinner::create(20.f);
@@ -255,7 +256,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     auto sendBtnSpr = EditorButtonSprite::createWithSpriteFrameName(
         "GJ_chatBtn_01_001.png",
         0.925f,
-        geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Green);
+        m_geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Green);
 
     if (auto ico = sendBtnSpr->getChildByType<CCSprite>(0)) {
         ico->setFlipX(true);
@@ -345,7 +346,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
         CircleButtonSprite::createWithSpriteFrameName(
             "geode.loader/reload.png",
             0.975f,
-            geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
+            m_geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
         [this](Button* sender) {
             refreshComments();
         });
@@ -458,7 +459,8 @@ void CommentsPopup::onDelete(Comment const& cmmt) {
 };
 
 void CommentsPopup::onReport(Comment const& cmmt) {
-    CommentReportPopup::create(cmmt)->show();
+    if (SelfDirector::get()->isReported(cmmt.id)) return Notification::create("You already reported this user", NotificationIcon::Warning)->show();
+    CommentReportPopup::create(cmmt, m_geodeTheme)->show();
 };
 
 arc::Future<WebRes> CommentsPopup::getComments() {
@@ -527,6 +529,7 @@ void CommentsPopup::refreshComments() {
                     auto cell = CommentItem::create(
                         std::move(cmmtRes).unwrap(),
                         m_commentList->getScaledContentWidth(),
+                        true,
                         m_geodeTheme);
                     cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
                         switch (act) {

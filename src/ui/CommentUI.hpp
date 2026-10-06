@@ -12,10 +12,10 @@ namespace cw::mod_cmmts {
     namespace ui {
         class CommentReportPopup final : public geode::Popup {
         protected:
-            bool init(Comment const& cmmt);
+            bool init(Comment const& cmmt, bool geodeTheme);
 
         public:
-            static CommentReportPopup* create(Comment const& cmmt);
+            static CommentReportPopup* create(Comment const& cmmt, bool geodeTheme = false);
         };
 
         class CommentItem final : public cocos2d::CCNode {
@@ -47,10 +47,10 @@ namespace cw::mod_cmmts {
 
             bool isSelf() const noexcept;
 
-            bool init(Comment cmmt, float width, bool geodeTheme);
+            bool init(Comment cmmt, float width, bool buttons, bool geodeTheme);
 
         public:
-            static CommentItem* create(Comment cmmt, float width, bool geodeTheme = false);
+            static CommentItem* create(Comment cmmt, float width, bool buttons = true, bool geodeTheme = false);
 
             void setActionCallback(Callback&& cb);
 
