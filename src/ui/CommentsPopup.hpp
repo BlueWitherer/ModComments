@@ -43,6 +43,9 @@ namespace cw::mod_cmmts {
             uint16_t m_page = 1;
             uint16_t m_maxPage = m_page;
 
+            geode::Button* m_pageNextBtn = nullptr;
+            geode::Button* m_pagePrevBtn = nullptr;
+
             geode::ScrollLayer* m_commentList = nullptr;
             cocos2d::CCNode* m_commentMenu = nullptr;
 

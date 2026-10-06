@@ -14,6 +14,32 @@ namespace cw::mod_cmmts {
     };
 };
 
+$on_game(Loaded) {
+    log::debug("Using web API url: {}", url::apiBase);
+
+    auto sd = SelfDirector::get();
+
+    async::spawn(
+        sd->authorize(),
+        [sd](WebRes res) {
+            if (res.isErr()) return log::error("{}: {}", res.getCode(), res.getError());
+
+            auto userRes = res.getPayload<CommentUser>();
+            if (userRes.isErr()) return log::error("Failed to parse payload: {}", userRes.unwrapErr());
+
+            sd->setCurrentUser(std::move(userRes).unwrap());
+            sd->authProgressing(false);
+        });
+
+    ButtonSettingPressedEvent(
+        Mod::get(),
+        "btn")
+        .listen([](std::string_view buttonKey) {
+            SelfDirector::get()->startAuth();
+        })
+        .leak();
+};
+
 class $nodeModify(CommentsModPopup, ModPopup) {
     struct Fields final {
         std::string id;

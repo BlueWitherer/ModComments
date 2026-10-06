@@ -11,6 +11,18 @@
 using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
+namespace cw::mod_cmmts {
+    namespace impl {
+        static bool isStaff() {
+            auto userRes = SelfDirector::get()->getCurrentUser();
+            if (userRes.isErr()) return false;
+
+            return userRes.unwrap().staff;
+        };
+
+    };
+};
+
 void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, CommentVote type) {
     auto like = type == CommentVote::Like;
 
@@ -41,8 +53,6 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
     setAnchorPoint({0.5, 0});
     setContentSize({width, 47.5f});
 
-    auto colors = ColorProvider::get();
-
     auto bg = cue::createBackground(
         getScaledContentSize(),
         {
@@ -51,7 +61,7 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
             .zOrder = -1,
             .id = "",
         });
-    bg->setColor(colors->color3b(
+    bg->setColor(ColorProvider::get()->color3b(
         isSelf()  // :3c
             ? geodeTheme
                   ? "geode.loader/mod-developer-item-bg"
@@ -124,7 +134,7 @@ bool CommentItem::init(Comment cmmt, float width, bool geodeTheme) {
 
     Button* actionBtn = nullptr;
 
-    if (isSelf()) {
+    if (isSelf() || impl::isStaff()) {
         actionBtn = Button::createWithSpriteFrameName(
             "GJ_trashBtn_001.png",
             [this](auto) {
@@ -177,36 +187,36 @@ void CommentItem::voteCallback(CommentVote type) {
 
     if (prevVote == (like ? 1 : -1)) type = CommentVote::None;
 
-    switch (type) {                              // this part is annoying and i'm stupid so i need my stupid baby comments
-        case CommentVote::Like: {                // <- is gonna like!
-            if (prevVote == 1) {                 // if already liked...
-                if (prevLikes > 0) prevLikes--;  // remove da like
+    switch (type) {
+        case CommentVote::Like: {
+            if (prevVote == 1) {
+                if (prevLikes > 0) prevLikes--;
             } else {
                 if (prevVote == -1 && prevDislikes > 0) prevDislikes--;
-                prevLikes++;  // otherwise add dat like, and remove dislike if previously disliked
+                prevLikes++;
             };
         } break;
 
-        case CommentVote::Dislike: {                   // <- is gonna DISlike!
-            if (prevVote == -1) {                      // if already disliked...
-                if (prevDislikes > 0) prevDislikes--;  // remove da dislike
+        case CommentVote::Dislike: {
+            if (prevVote == -1) {
+                if (prevDislikes > 0) prevDislikes--;
             } else {
                 if (prevVote == 1 && prevLikes > 0) prevLikes--;
-                prevDislikes++;  // otherwise add dat dislike, and remove like if previously liked
+                prevDislikes++;
             };
         } break;
 
-        case CommentVote::None: {                             // is unliking entirely
-            if (prevVote == 1 && prevLikes > 0) {             // if already liked...
-                prevLikes--;                                  // remove da like
-            } else if (prevVote == -1 && prevDislikes > 0) {  // if already disliked...
-                prevDislikes--;                               // remove da dislike
+        case CommentVote::None: {
+            if (prevVote == 1 && prevLikes > 0) {
+                prevLikes--;
+            } else if (prevVote == -1 && prevDislikes > 0) {
+                prevDislikes--;
             };
         } break;
     };
 
-    m_likeLabel->setText(numToString(prevLikes));
-    m_dislikeLabel->setText(numToString(prevDislikes));
+    m_likeLabel->setText(numToAbbreviatedString(prevLikes));
+    m_dislikeLabel->setText(numToAbbreviatedString(prevDislikes));
 
     m_likeBtn->setEnabled(false);
     m_dislikeBtn->setEnabled(false);
@@ -215,8 +225,8 @@ void CommentItem::voteCallback(CommentVote type) {
         sendVote(type),
         [this, prevLikes, prevDislikes, prevVote, like](WebRes res) {
             auto const completed = [this]() {
-                m_likeLabel->setText(numToString(m_comment.likes));
-                m_dislikeLabel->setText(numToString(m_comment.dislikes));
+                m_likeLabel->setText(numToAbbreviatedString(m_comment.likes));
+                m_dislikeLabel->setText(numToAbbreviatedString(m_comment.dislikes));
 
                 m_likeBtn->setEnabled(true);
                 m_dislikeBtn->setEnabled(true);
@@ -233,7 +243,7 @@ void CommentItem::voteCallback(CommentVote type) {
             if (cmmtRes.isErr()) return fallback(cmmtRes.unwrapErr());
 
             auto cmmt = std::move(cmmtRes).unwrap();
-            log::debug("setting current voted status to {}", cmmt.myVote);
+            log::debug("setting current voted status to {}({}/{})", cmmt.myVote, cmmt.likes, cmmt.dislikes);
 
             m_comment = std::move(cmmt);
 

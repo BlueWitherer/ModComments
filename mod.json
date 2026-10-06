@@ -34,11 +34,13 @@
         ]
     },
     "settings": {
-        "gay": {
-            "type": "bool",
-            "name": "gay",
-            "description": "are you gay",
-            "default": true
+        "btn": {
+            "type": "button",
+            "name": "Refresh Login",
+            "buttons": {
+                "refresh": "Refresh Login"
+            },
+            "description": "Manually refresh your authorization status."
         }
     },
     "early-load": false

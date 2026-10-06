@@ -15,19 +15,6 @@ namespace cw::mod_cmmts {
     namespace impl {
         static constexpr uint8_t g_commentWait = 30;
         static constexpr uint8_t g_refreshWait = 2;
-
-        static auto getUserIcons() {
-            auto gm = GameManager::sharedState();
-
-            return UserIcons{
-                static_cast<uint16_t>(gm->activeIconForType(gm->m_playerIconType)),
-                gm->m_playerIconType,
-                static_cast<uint8_t>(gm->getPlayerColor()),
-                static_cast<uint8_t>(gm->getPlayerColor2()),
-                static_cast<uint8_t>(gm->getPlayerGlowColor()),
-                gm->m_playerGlow,
-            };
-        };
     };
 };
 
@@ -389,7 +376,7 @@ arc::Future<WebRes> CommentsPopup::sendComment() {
         if (auto s = self.lock()) return std::string{s->m_inputBox->getString()};
         return std::string{};
     });
-    body["icons"] = impl::getUserIcons();
+    body["icons"] = user::getUserIcons();
 
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
