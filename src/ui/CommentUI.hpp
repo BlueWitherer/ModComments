@@ -10,7 +10,6 @@
 
 namespace cw::mod_cmmts {
     namespace ui {
-
         class CommentReportPopup final : public geode::Popup {
         protected:
             bool init(Comment const& cmmt);
@@ -56,23 +55,6 @@ namespace cw::mod_cmmts {
             void setActionCallback(Callback&& cb);
 
             Comment const& getComment() const noexcept;
-        };
-
-        class CommentModNode final : public cocos2d::CCNode {
-        private:
-            std::string m_id;
-
-            GeodeMod m_data;
-            bool m_dataOk = false;
-
-            std::string getModName() const;
-            std::vector<std::string> getModDevs() const;
-
-        protected:
-            bool init(std::string id, std::optional<GeodeMod> mod);
-
-        public:
-            static CommentModNode* create(std::string id, std::optional<GeodeMod> mod = std::nullopt);
         };
     };
 };

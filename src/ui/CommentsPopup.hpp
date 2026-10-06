@@ -25,6 +25,23 @@ namespace cw::mod_cmmts {
     };
 
     namespace ui {
+        class CommentModNode final : public cocos2d::CCNode {
+        private:
+            std::string m_id;
+
+            GeodeMod m_data;
+            bool m_dataOk = false;
+
+            std::string getModName() const;
+            std::vector<std::string> getModDevs() const;
+
+        protected:
+            bool init(std::string id, std::optional<GeodeMod> mod);
+
+        public:
+            static CommentModNode* create(std::string id, std::optional<GeodeMod> mod = std::nullopt);
+        };
+
         class CommentsPopup final : public geode::Popup {
             struct LinkButton final {
                 std::string id;

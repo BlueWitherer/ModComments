@@ -37,6 +37,106 @@ matjson::Value matjson::Serialize<CommentRequest>::toJson(CommentRequest const& 
     return out;
 };
 
+std::string CommentModNode::getModName() const {
+    return m_dataOk ? m_data.versions[0].name : Loader::get()->getInstalledMod(m_id)->getName().c_str();
+};
+
+std::vector<std::string> CommentModNode::getModDevs() const {
+    std::vector<std::string> out;
+
+    if (m_dataOk) {
+        out.reserve(m_data.developers.size());
+        for (auto const& dev : m_data.developers) out.push_back(dev.displayName);
+    } else {
+        out = Loader::get()->getInstalledMod(m_id)->getDevelopers();
+    };
+
+    return out;
+};
+
+bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
+    m_id = std::move(id);
+
+    if (mod.has_value()) {
+        m_dataOk = true;
+        m_data = std::move(mod).value();
+    };
+
+    if (!CCNode::init()) return false;
+
+    auto layout = RowLayout::create()
+                      ->setGap(5.f)
+                      ->setAutoScale(false)
+                      ->setAutoGrowAxis(0.f)
+                      ->setGrowCrossAxis(true);
+
+    setAnchorPoint({0.5, 1});
+    setLayout(layout);
+
+    if (m_dataOk) {
+        auto icon = LazySprite::create({18.75f, 18.75f});
+        icon->setID("logo");
+        icon->setAutoResize(true);
+        icon->setAnchorPoint({0.5, 0.5});
+
+        icon->setLoadCallback([this, icon](Result<> res) {
+            if (res.isOk()) cue::rescaleToMatch(icon, 18.75f);
+            updateLayout();
+        });
+
+        addChild(icon);
+
+        icon->loadFromUrl(fmt::format("https://api.geode-sdk.org/v1/mods/{}/logo", m_id));
+    } else {
+        auto icon = createModLogo(Loader::get()->getInstalledMod(m_id));
+        icon->setID("logo");
+
+        cue::rescaleToMatch(icon, 18.75f);
+
+        addChild(icon);
+    };
+
+    auto name = Label::create(getModName(), "bigFont.fnt");
+    name->setID("name");
+    name->setAnchorPoint({0, 0.5});
+    name->setLimitLabelWidth(165.f, 0.525f);
+
+    addChild(name);
+
+    std::string devsText;
+    auto const devList = getModDevs();
+
+    if (devList.size() > 2) {
+        devsText = fmt::format("{} + {} more", devList[0], devList.size() - 1);
+    } else if (devList.size() > 1) {
+        devsText = fmt::format("{} & {}", devList[0], devList[1]);
+    } else {
+        devsText = devList[0];
+    };
+
+    auto devs = Label::create(std::move(devsText), "goldFont.fnt");
+    devs->setID("developers");
+    devs->setAnchorPoint({0, 0.5});
+    devs->setLimitLabelWidth(100.f, 0.425f);
+
+    addChild(devs);
+
+    updateLayout();
+
+    return true;
+};
+
+CommentModNode* CommentModNode::create(std::string id, std::optional<GeodeMod> mod) {
+    auto ret = new CommentModNode();
+    if (ret->init(std::move(id), std::move(mod))) {
+        ret->autorelease();
+        return ret;
+    };
+
+    delete ret;
+    return nullptr;
+};
+
 asp::Instant CommentsPopup::s_lastComment;
 asp::Instant CommentsPopup::s_lastRefresh;
 
@@ -357,7 +457,9 @@ void CommentsPopup::onDelete(Comment const& cmmt) {
         });
 };
 
-void CommentsPopup::onReport(Comment const& cmmt) {};
+void CommentsPopup::onReport(Comment const& cmmt) {
+    CommentReportPopup::create(cmmt)->show();
+};
 
 arc::Future<WebRes> CommentsPopup::getComments() {
     auto req = request::base()
