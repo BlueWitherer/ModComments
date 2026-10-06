@@ -212,10 +212,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_commentList->setAnchorPoint({0.5, 1});
     m_commentList->ignoreAnchorPointForPosition(false);
 
-    auto commentListLayout = static_cast<SimpleColumnLayout*>(ScrollLayer::createDefaultListLayout(3.75f))
-                                 ->setMainAxisDirection(AxisDirection::BottomToTop);
-
-    m_commentList->m_contentLayer->setLayout(commentListLayout);
+    m_commentList->m_contentLayer->setLayout(ScrollLayer::createDefaultListLayout(3.25f));
 
     cmmtBorder->addChildAtPosition(m_commentList, Anchor::Top, {0.f, -5.f});
 

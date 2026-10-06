@@ -24,7 +24,7 @@ namespace cw::mod_cmmts {
 };
 
 bool CommentReportPopup::init(Comment const& cmmt, bool geodeTheme) {
-    if (!Popup::init({275.f, 165.f}, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
+    if (!Popup::init({300.f, 185.f}, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
     setID("report-popup"_spr);
     setTitle(fmt::format("Report {}", cmmt.author.username));
@@ -36,7 +36,7 @@ bool CommentReportPopup::init(Comment const& cmmt, bool geodeTheme) {
             geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
         0.825f);
 
-    auto cmmtNode = CommentItem::create(cmmt, m_mainLayer->getScaledContentWidth() * 0.925f, false, geodeTheme);
+    auto cmmtNode = Ref(CommentItem::create(cmmt, m_mainLayer->getScaledContentWidth() * 0.925f, false, geodeTheme));
     cmmtNode->setAnchorPoint({0.5, 1});
 
     m_mainLayer->addChildAtPosition(cmmtNode, Anchor::Top, {0.f, -40.f});
@@ -150,7 +150,11 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
     m_contentLabel->setID("comment-content-label");
     m_contentLabel->setScale(0.5f);
     m_contentLabel->setAnchorPoint({0, 1});
-    m_contentLabel->setMaxWidth(getScaledContentWidth() * 1.375f);  // cuts off way too early for some reason
+
+    buttons
+        ? m_contentLabel->setMaxWidth(getScaledContentWidth() * 1.375f)  // <- cuts off way too early for some reason
+        : m_contentLabel->setLimitLabelWidth(getScaledContentWidth() - 32.5f, 0.5f);
+
     m_contentLabel->setAlignment(Label::Alignment::Left);
 
     addChildAtPosition(m_contentLabel, Anchor::TopLeft, {27.5f, -25.f});
