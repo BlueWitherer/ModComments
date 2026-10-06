@@ -58,7 +58,7 @@ namespace cw::mod_cmmts {
             static geode::utils::StringMap<GeodeMod> s_indexedMods;
 
             uint16_t m_page = 1;
-            uint16_t m_maxPage = m_page;
+            uint16_t m_maxPage = m_page + 1;
 
             geode::Button* m_pageNextBtn = nullptr;
             geode::Button* m_pagePrevBtn = nullptr;
@@ -93,11 +93,15 @@ namespace cw::mod_cmmts {
             void refreshComments();
             bool showInput() const;
 
+            bool mustAgreeToRules() const;
+
         protected:
             void onDelete(Comment const& cmmt);
             void onReport(Comment const& cmmt);
 
             void onSend(geode::Button* sender);
+
+            void onExit() override;
 
             bool init(std::string modID, bool geodeTheme);
 

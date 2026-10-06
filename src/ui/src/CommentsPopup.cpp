@@ -6,8 +6,6 @@
 
 #include <Geode/Geode.hpp>
 
-#include <Geode/utils/ColorProvider.hpp>
-
 using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
@@ -228,6 +226,40 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     cmmtBorder->addChildAtPosition(m_errLabel, Anchor::Center);
 
+    static constexpr auto pageBtnSprName = "GJ_arrow_02_001.png";
+
+    m_pageNextBtn = Button::createWithSpriteFrameName(
+        pageBtnSprName,
+        [this](Button* sender) {
+            if (m_page < m_maxPage) m_page++;
+            if (m_page > m_maxPage) m_page = m_maxPage;
+
+            sender->setVisible(m_page < m_maxPage);
+
+            refreshComments();
+        });
+    m_pageNextBtn->setID("page-next-btn");
+    m_pageNextBtn->setScale(0.875f);
+    m_pageNextBtn->setVisible(m_page < m_maxPage);
+
+    if (auto spr = typeinfo_cast<CCSprite*>(m_pageNextBtn->getDisplayNode())) spr->setFlipX(true);
+
+    m_pagePrevBtn = Button::createWithSpriteFrameName(
+        pageBtnSprName,
+        [this](Button* sender) {
+            if (m_page > 1) m_page--;
+
+            sender->setVisible(m_page > 1);
+
+            refreshComments();
+        });
+    m_pagePrevBtn->setID("page-previous-btn");
+    m_pagePrevBtn->setScale(0.875f);
+    m_pagePrevBtn->setVisible(m_page > 1);
+
+    m_mainLayer->addChildAtPosition(m_pageNextBtn, Anchor::Right, {17.5f, 0.f});
+    m_mainLayer->addChildAtPosition(m_pagePrevBtn, Anchor::Left, {-17.5f, 0.f});
+
     auto sendMenuLayout = RowLayout::create()
                               ->setAutoScale(false)
                               ->setAxisAlignment(AxisAlignment::Between);
@@ -370,6 +402,17 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     refreshComments();
 
+    // queueInMainThread([self = WeakRef(this)]() {
+    //     if (auto s = self.lock()) {
+    //         if (s->mustAgreeToRules()) RulesPopup::create(
+    //             [s](bool agreed) {
+    //                 if (!agreed) s->removeFromParent();
+    //             },
+    //             s->m_geodeTheme)
+    //                                        ->show();
+    //     };
+    // });
+
     return true;
 };
 
@@ -460,7 +503,7 @@ void CommentsPopup::onDelete(Comment const& cmmt) {
 void CommentsPopup::onReport(Comment const& cmmt) {
     if (m_commentActionTask.isPending()) return;
 
-    if (SelfDirector::get()->isReported(cmmt.id)) return Notification::create("You already reported this user", NotificationIcon::Warning)->show();
+    if (SelfDirector::get()->isReported(cmmt.id)) return Notification::create("You already reported this comment", NotificationIcon::Warning)->show();
 
     CommentReportPopup::create(
         cmmt,
@@ -515,6 +558,9 @@ void CommentsPopup::refreshComments() {
     m_commentList->setVisible(false);
     m_commentMenu->setVisible(false);
 
+    m_pageNextBtn->setEnabled(false);
+    m_pagePrevBtn->setEnabled(false);
+
     m_refreshBtn->setVisible(false);
 
     m_loading->setVisible(true);
@@ -536,6 +582,10 @@ void CommentsPopup::refreshComments() {
                 if (arrayRes.isErr()) return fallback(arrayRes.unwrapErr());
 
                 auto const array = std::move(arrayRes).unwrap();
+                if (array.size() < 15) {
+                    m_page--;
+                    m_maxPage = m_page;
+                };
 
                 for (auto const& val : array) {
                     auto cmmtRes = val.as<Comment>();
@@ -561,6 +611,12 @@ void CommentsPopup::refreshComments() {
                     m_commentList->m_contentLayer->addChild(cell);
                 };
 
+                m_pageNextBtn->setVisible(m_page < m_maxPage);
+                m_pagePrevBtn->setVisible(m_page > 1);
+
+                m_pageNextBtn->setEnabled(true);
+                m_pagePrevBtn->setEnabled(true);
+
                 m_commentList->m_contentLayer->updateLayout();
                 m_commentList->scrollToTop();
 
@@ -578,6 +634,15 @@ void CommentsPopup::refreshComments() {
 
 bool CommentsPopup::showInput() const {
     return argon::signedIn() && Loader::get()->isModInstalled(m_modID);
+};
+
+bool CommentsPopup::mustAgreeToRules() const {
+    return argon::signedIn() && !Mod::get()->getSavedValue("agreed-rules", false);
+};
+
+void CommentsPopup::onExit() {
+    if (auto popup = CCScene::get()->getChildByType<RulesPopup>()) popup->removeFromParent();
+    Popup::onExit();
 };
 
 CommentsPopup* CommentsPopup::create(std::string modID, bool geodeTheme) {

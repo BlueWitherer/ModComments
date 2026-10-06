@@ -26,7 +26,7 @@ namespace cw::mod_cmmts {
 bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeTheme) {
     m_callback = std::move(cb);
 
-    if (!Popup::init({300.f, 185.f}, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
+    if (!Popup::init(300.f, 185.f, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
     setID("report-popup"_spr);
     setTitle(fmt::format("Report {}", cmmt.author.username));
@@ -39,7 +39,7 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
         0.825f);
 
     auto cmmtNode = CommentItem::create(cmmt, m_mainLayer->getScaledContentWidth() * 0.925f, false, geodeTheme);
-    m_mainLayer->addChildAtPosition(cmmtNode, Anchor::Center, {0.f, -8.75f});
+    m_mainLayer->addChildAtPosition(cmmtNode, Anchor::Center, {0.f, -12.5f});
 
     auto label = Label::createRich("If you believe this user's comment <cr>breaks our rules</c>, <cy>describe why using the text box below</c>. Thank you!", "chatFont.fnt");
     label->setScale(0.675f);
