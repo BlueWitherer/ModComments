@@ -11,11 +11,18 @@
 namespace cw::mod_cmmts {
     namespace ui {
         class CommentReportPopup final : public geode::Popup {
+            using Callback = geode::Function<void(Comment const&, std::string)>;
+
+        private:
+            geode::TextInput* m_inputBox = nullptr;
+
+            Callback m_callback = nullptr;
+
         protected:
-            bool init(Comment const& cmmt, bool geodeTheme);
+            bool init(Comment const& cmmt, Callback&& cb, bool geodeTheme);
 
         public:
-            static CommentReportPopup* create(Comment const& cmmt, bool geodeTheme = false);
+            static CommentReportPopup* create(Comment const& cmmt, Callback&& cb, bool geodeTheme = false);
         };
 
         class CommentItem final : public cocos2d::CCNode {

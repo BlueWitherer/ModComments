@@ -3,27 +3,17 @@
 
 *by [Cheeseworks](user:6408873)!*
 
-> ![✳️](frame:collaborationIcon_001.png) <cg>*This mod has settings you can utilize to customize your experience.*</c>
-
 ---
 
 ## About
-This mod template is intended to fit my very strangely specific needs.
+Access **comment sections for mods directly in-game**. Talk about your experience with the mods you've downloaded, and seek feedback from others.
+
+> ![ℹ️](frame:GJ_infoIcon_001.png?scale=0.5) <cj>*This is an **online** mod. **Check [status.cheeseworks.gay](https://status.cheeseworks.gay/)** before reporting any connectivity issues!*</c>
 
 ---
 
-### Features
-Here I ramble on about <cg>features</c>. Don't <cy>forget</c> very specific color coding! Sometimes I also tell people to <cl>press buttons</c> and <cf>use their keybinds</c>. Wow.
-
-### Another Feature
-There's MORE?! Shut up...
-
-> ![⚠](frame:geode.loader/info-warning.png?scale=0.375) <cy>*This is a warning. Be warned.*</c>
-
----
-
-### Credits
-- **[ArcticWoof](user:7689052)**: guy i met next to a dumpster :P
+### Commenting
+On any Geode mod information pop-up, you'll find <cg>a tab for comments</c>. <cl>Press it</c> to open <cg>a new pop-up with comments</c> from people who have downloaded the mod. Feel free to look for others' opinions on that mod, or <cy>leave your own</c>!
 
 ---
 

@@ -23,7 +23,9 @@ namespace cw::mod_cmmts {
     };
 };
 
-bool CommentReportPopup::init(Comment const& cmmt, bool geodeTheme) {
+bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeTheme) {
+    m_callback = std::move(cb);
+
     if (!Popup::init({300.f, 185.f}, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
     setID("report-popup"_spr);
@@ -36,23 +38,69 @@ bool CommentReportPopup::init(Comment const& cmmt, bool geodeTheme) {
             geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
         0.825f);
 
-    auto cmmtNode = Ref(CommentItem::create(cmmt, m_mainLayer->getScaledContentWidth() * 0.925f, false, geodeTheme));
-    cmmtNode->setAnchorPoint({0.5, 1});
+    auto cmmtNode = CommentItem::create(cmmt, m_mainLayer->getScaledContentWidth() * 0.925f, false, geodeTheme);
+    m_mainLayer->addChildAtPosition(cmmtNode, Anchor::Center, {0.f, -8.75f});
 
-    m_mainLayer->addChildAtPosition(cmmtNode, Anchor::Top, {0.f, -40.f});
+    auto label = Label::createRich("If you believe this user's comment <cr>breaks our rules</c>, <cy>describe why using the text box below</c>. Thank you!", "chatFont.fnt");
+    label->setScale(0.675f);
+    label->setAnchorPoint({0.5, 1});
+    label->setAlignment(Label::Alignment::Center);
+    label->setMaxWidth((m_mainLayer->getScaledContentWidth() - 37.5f) * 1.425f);
 
-    auto wip = Label::create("work in progress!!!", "chatFont.fnt");
-    wip->setScale(0.625f);
-    wip->setAlignment(Label::Alignment::Center);
+    m_mainLayer->addChildAtPosition(label, Anchor::Top, {0.f, -32.5f});
 
-    m_mainLayer->addChildAtPosition(wip, Anchor::Bottom, {0.f, 37.5f});
+    m_inputBox = TextInput::create(m_mainLayer->getScaledContentWidth() - 25.f, "Tell us about this commment...", "chatFont.fnt");
+    m_inputBox->setID("description-input");
+    m_inputBox->setMaxCharCount(128);
+    m_inputBox->setCommonFilter(CommonFilter::Any);
+    m_inputBox->setContentHeight(m_inputBox->getScaledContentHeight() * 1.5f);
+
+    m_mainLayer->addChildAtPosition(m_inputBox, Anchor::Center, {0.f, -27.5f});
+
+    auto warning = Label::createRich("<co>False reports</c> will most likely result in <cr>action taken on your own account</c>, please be mindful of your reports!", "chatFont.fnt");
+    warning->setScale(0.5f);
+    warning->setAnchorPoint({0.5, 1});
+    warning->setAlignment(Label::Alignment::Center);
+    warning->setMaxWidth((m_mainLayer->getScaledContentWidth() - 37.5f) * 1.75f);
+
+    m_mainLayer->addChildAtPosition(warning, Anchor::Center, {0.f, -57.5f});
+
+    auto sendBtn = Button::createWithNode(
+        ButtonSprite::create(
+            "Submit",
+            "goldFont.fnt",
+            geodeTheme ? "geode.loader/GE_button_05.png" : "GJ_button_01.png",
+            0.875f),
+        [this, &cmmt](Button* sender) {
+            auto input = str::trim(m_inputBox->getString());
+            if (input.empty()) return Notification::create("Reason cannot be empty.", NotificationIcon::Error)->show();
+
+            m_callback(cmmt, std::move(input));
+        });
+    sendBtn->setID("submit-idea-btn");
+    sendBtn->setScale(0.75f);
+
+    m_mainLayer->addChildAtPosition(sendBtn, Anchor::Bottom);
+
+    auto rulesBtn = Button::createWithNode(
+        CircleButtonSprite::createWithSpriteFrameName(
+            "geode.loader/news.png",
+            0.75f,
+            geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
+        [](Button* sender) {
+            popups::showRules();
+        });
+    rulesBtn->setID("comment-rules-btn");
+    rulesBtn->setScale(0.625f);
+
+    m_mainLayer->addChildAtPosition(rulesBtn, Anchor::BottomRight, {}, false);
 
     return true;
 };
 
-CommentReportPopup* CommentReportPopup::create(Comment const& cmmt, bool geodeTheme) {
+CommentReportPopup* CommentReportPopup::create(Comment const& cmmt, Callback&& cb, bool geodeTheme) {
     auto ret = new CommentReportPopup();
-    if (ret->init(cmmt, geodeTheme)) {
+    if (ret->init(cmmt, std::move(cb), geodeTheme)) {
         ret->autorelease();
         return ret;
     };
@@ -79,6 +127,8 @@ void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, Comm
     btn->setScale(0.625f);
 
     to->addChild(btn);
+
+    btn->setEnabled(argon::signedIn());
 
     to->updateLayout();
 };
@@ -180,31 +230,33 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
 
         addChildAtPosition(actionMenu, Anchor::TopRight, {-3.75f, -3.75f});
 
-        Button* actionBtn = nullptr;
+        if (argon::signedIn()) {
+            Button* actionBtn = nullptr;
 
-        if (isSelf() || impl::isStaff()) {
-            actionBtn = Button::createWithSpriteFrameName(
-                "GJ_trashBtn_001.png",
-                [this](auto) {
-                    m_callback(CommentAction::Delete, m_comment);
-                });
-            actionBtn->setID("delete-comment-btn");
-        } else {
-            actionBtn = Button::createWithNode(
-                CircleButtonSprite::createWithSpriteFrameName(
-                    "geode.loader/exclamation-red.png",
-                    0.875f,
-                    geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
-                [this](auto) {
-                    m_callback(CommentAction::Report, m_comment);
-                });
-            actionBtn->setID("report-comment-btn");
+            if (isSelf() || impl::isStaff()) {
+                actionBtn = Button::createWithSpriteFrameName(
+                    "GJ_trashBtn_001.png",
+                    [this](auto) {
+                        m_callback(CommentAction::Delete, m_comment);
+                    });
+                actionBtn->setID("delete-comment-btn");
+            } else {
+                actionBtn = Button::createWithNode(
+                    CircleButtonSprite::createWithSpriteFrameName(
+                        "geode.loader/exclamation-red.png",
+                        0.875f,
+                        geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
+                    [this](auto) {
+                        m_callback(CommentAction::Report, m_comment);
+                    });
+                actionBtn->setID("report-comment-btn");
+            };
+            actionBtn->setScale(0.925f);
+
+            cue::rescaleToMatch(actionBtn, 20.f);
+
+            actionMenu->addChild(actionBtn);
         };
-        actionBtn->setScale(0.925f);
-
-        cue::rescaleToMatch(actionBtn, 20.f);
-
-        actionMenu->addChild(actionBtn);
 
         addVoteNodes(actionMenu, m_dislikeBtn, m_dislikeLabel, CommentVote::Dislike);
         addVoteNodes(actionMenu, m_likeBtn, m_likeLabel, CommentVote::Like);

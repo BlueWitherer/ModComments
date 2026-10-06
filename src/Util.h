@@ -54,9 +54,7 @@ namespace cw::mod_cmmts {
             "4. **Staff decisions**. - Moderators are instructed to take <cg>whatever means necessary to keep chats safe</c>. If you believe action has been <co>wrongfully taken against you</c>, you can communicate your concerns in [Cheeseworks's Discord server](https://www.dsc.gg/cheeseworks)!\n\n"
             "5. **Common sense.** - Not every rule can be written. <co>Acting in bad faith</c> because specific unethical behaviors aren't explicitly mentioned here **will still result in punishments**.\n\n"
             "---\n\n"
-            "![✳️](frame:collaborationIcon_001.png) <cg>*Caught someone breaking rules? Please do report their comment(s) using the handy report button!*</c>\n\n"
-            "---\n\n"
-            "That's all, hope you enjoy the mod! ![<3](frame:gj_heartOn_001.png?scale=0.425)";
+            "![🗨️](frame:gj_discordIcon_001.png?scale=0.375) **If you need help, join my [support Discord server](https://www.dsc.gg/cheeseworks) and ask! :)**";
 
         void showRules();
     };

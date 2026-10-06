@@ -391,7 +391,7 @@ void CommentsPopup::onSend(Button* sender) {
     if (str::trim(m_inputBox->getString()).empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
 
     sender->setEnabled(false);
-    if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({50, 50, 50});
+    if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({65, 65, 65});
 
     m_refreshBtn->setVisible(false);
 
@@ -440,6 +440,8 @@ arc::Future<WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason
 };
 
 void CommentsPopup::onDelete(Comment const& cmmt) {
+    if (m_commentActionTask.isPending()) return;
+
     createQuickPopup(
         "Delete Comment",
         "<cr>Delete</c> this comment?",
@@ -456,8 +458,27 @@ void CommentsPopup::onDelete(Comment const& cmmt) {
 };
 
 void CommentsPopup::onReport(Comment const& cmmt) {
+    if (m_commentActionTask.isPending()) return;
+
     if (SelfDirector::get()->isReported(cmmt.id)) return Notification::create("You already reported this user", NotificationIcon::Warning)->show();
-    CommentReportPopup::create(cmmt, m_geodeTheme)->show();
+
+    CommentReportPopup::create(
+        cmmt,
+        [this](Comment const& cmmt, std::string reason) {
+            if (auto popup = CCScene::get()->getChildByType<CommentReportPopup>()) cue::resetNode(popup);
+            Notification::create("Reporting comment...", NotificationIcon::Loading)->show();
+
+            m_commentActionTask.spawn(
+                reportComment(cmmt.id, std::move(reason)),
+                [&cmmt](WebRes res) {
+                    if (res.isErr()) return Notification::create(fmt::format("Failed to report comment ({})", res.getCode()), NotificationIcon::Error)->show();
+
+                    SelfDirector::get()->setReport(cmmt.id);
+                    Notification::create("Reported successfully", NotificationIcon::Success)->show();
+                });
+        },
+        m_geodeTheme)
+        ->show();
 };
 
 arc::Future<WebRes> CommentsPopup::getComments() {
