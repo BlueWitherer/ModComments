@@ -287,7 +287,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_modID = std::move(modID);
     m_geodeTheme = geodeTheme;
 
-    if (!Popup::init(430.f, 265.f, m_geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
+    if (!Popup::init(430.f, 270.f, m_geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
     setID(fmt::format("popup-{}", modID));
 
@@ -348,7 +348,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     cmmtBorder->addChildAtPosition(m_loading, Anchor::Center);
 
-    m_commentList = ScrollLayer::create({cmmtBorder->getScaledContentWidth() - 12.5f, cmmtBorder->getScaledContentHeight() - (showInput() ? 45.f : 12.5f)});
+    m_commentList = ScrollLayer::create({cmmtBorder->getScaledContentWidth() - 12.5f, cmmtBorder->getScaledContentHeight() - (showInput() ? 45.f : 25.f)});
     m_commentList->setID("comment-list");
     m_commentList->setAnchorPoint({0.5, 1});
     m_commentList->ignoreAnchorPointForPosition(false);
@@ -406,9 +406,10 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_pageLabel = Label::create("Page ?", "goldFont.fnt");
     m_pageLabel->setID("page-label");
     m_pageLabel->setScale(0.5f);
-    m_pageLabel->setAnchorPoint({0, 1});
+    m_pageLabel->setAnchorPoint({1, 1});
+    m_pageLabel->setAlignment(Label::Alignment::Right);
 
-    m_mainLayer->addChildAtPosition(m_pageLabel, Anchor::BottomLeft, {0.f, -1.25f});
+    m_mainLayer->addChildAtPosition(m_pageLabel, Anchor::BottomRight, {-15.f, -1.25f});
 
     auto sendMenuLayout = RowLayout::create()
                               ->setAutoScale(false)
@@ -432,6 +433,21 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_commentMenu->addChild(m_inputBox);
 
     m_commentMenu->setVisible(showInput());
+
+    if (!showInput()) {
+        auto install = Label::createRich(
+            Loader::get()->isModInstalled(m_modID)
+                ? (argon::signedIn()
+                          ? "<cr>Unknown error</c>"  // idk let me have fun with my ternaries >:C
+                          : "<cy>Log in</c> to <cg>post comments</c>!")
+                : "<cy>Install this mod</c> if you'd like to <cg>post comments</c> here!",
+            "chatFont.fnt");
+        install->setScale(0.675f);
+        install->setAnchorPoint({0.5, 0});
+        install->setAlignment(Label::Alignment::Center);
+
+        cmmtBorder->addChildAtPosition(install, Anchor::Bottom, {0.f, 4.25f});
+    };
 
     auto sendBtnSpr = EditorButtonSprite::createWithSpriteFrameName(
         "GJ_chatBtn_01_001.png",
