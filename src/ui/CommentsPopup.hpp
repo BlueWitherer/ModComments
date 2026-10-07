@@ -96,8 +96,6 @@ namespace cw::mod_cmmts {
             void refreshComments(bool skipCooldown = false);
             bool showInput() const;
 
-            bool mustAgreeToRules() const;
-
         protected:
             void onDelete(Comment const& cmmt);
             void onReport(Comment const& cmmt);

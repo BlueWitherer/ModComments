@@ -10,12 +10,12 @@ using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
 bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
+    m_callback = std::move(cb);
+
     if (!Popup::init(400.f, 250.f, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
     setID("rules"_spr);
     setTitle("Mod Comments Guidelines");
-    setKeyboardEnabled(false);
-    setKeypadEnabled(false);
 
     setCloseButtonSpr(
         CircleButtonSprite::createWithSpriteFrameName(
@@ -36,6 +36,33 @@ bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
 
     m_mainLayer->addChildAtPosition(label, Anchor::Top, {0.f, -32.5f});
 
+    auto rulesText = MDTextArea::create(popups::g_rulesText, {m_mainLayer->getScaledContentWidth() - 45.f, m_mainLayer->getScaledContentHeight() - 87.5f});
+    rulesText->setID("rules-text-area");
+    rulesText->setZOrder(9);
+
+    m_mainLayer->addChildAtPosition(rulesText, Anchor::Center, {0.f, -3.75f});
+
+    auto sendBtn = Button::createWithNode(
+        ButtonSprite::create(
+            "Proceed",
+            "goldFont.fnt",
+            geodeTheme ? "geode.loader/GE_button_05.png" : "GJ_button_01.png",
+            0.925f),
+        [this](auto) {
+            createQuickPopup(
+                "Confirm",
+                "<cg>Agree</c> to the <cr>rules</c>?",
+                "No",
+                "Yes",
+                [this](auto, bool ok) {
+                    return m_callback(this, ok);
+                });
+        });
+    sendBtn->setID("proceed-btn");
+    sendBtn->setScale(0.925f);
+
+    m_mainLayer->addChildAtPosition(sendBtn, Anchor::Bottom, {0.f, sendBtn->getScaledContentHeight() * 0.75f});
+
     auto infoBtn = Button::createWithSpriteFrameName(
         "GJ_infoIcon_001.png",
         [](auto) {
@@ -53,10 +80,6 @@ bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
     m_mainLayer->addChildAtPosition(infoBtn, Anchor::TopRight, {-15.f, -15.f});
 
     return true;
-};
-
-void RulesPopup::keyBackClicked() {
-    m_callback(m_agreed);
 };
 
 RulesPopup* RulesPopup::create(Callback&& cb, bool geodeTheme) {

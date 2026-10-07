@@ -46,10 +46,36 @@ class $nodeModify(CommentsModPopup, ModPopup) {
         bool geodeTheme = false;
 
         TaskHolder<WebRes> checkIndexTask;
+
+        arc::Future<WebRes> checkModIndex(std::string modID) {
+            auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID));
+            co_return webres::processResp(res);
+        };
+
+        void createPopup() {
+            if (!mustAgreeToRules()) return CommentsPopup::create(id, geodeTheme)->show();
+
+            RulesPopup::create(
+                [this](RulesPopup* sender, bool agreed) {
+                    sender->removeFromParent();
+
+                    if (!agreed) return;
+
+                    Mod::get()->setSavedValue("agreed-rules", true);
+                    CommentsPopup::create(id, geodeTheme)->show();
+                },
+                geodeTheme)
+                ->show();
+        };
+
+        bool mustAgreeToRules() const {
+            return argon::signedIn() && !Mod::get()->getSavedValue("agreed-rules", false);
+        };
     };
 
     void modify() {
         auto f = m_fields.self();
+
         f->geodeTheme = Loader::get()->getLoadedMod(CW_GEODE_ID)->getSettingValue<std::string>("used-theme") != "Geometry Dash";
 
         if (auto res = getThisID(); res.isOk()) f->id = std::move(res).unwrap();
@@ -66,14 +92,14 @@ class $nodeModify(CommentsModPopup, ModPopup) {
 
                     auto tab = CCMenuItemExt::createSpriteExtra(
                         tabSprite,
-                        [this, f](auto) {
-                            if (auto const it = main::g_validMods.find(f->id); it != main::g_validMods.end()) return CommentsPopup::create(f->id, f->geodeTheme)->show();
+                        [f](auto) {
+                            if (auto const it = main::g_validMods.find(f->id); it != main::g_validMods.end()) return f->createPopup();
 
                             auto popup = UploadActionPopup::create(nullptr, fmt::format("Checking Geode index...", f->id));
                             popup->show();
 
                             f->checkIndexTask.spawn(
-                                checkModIndex(f->id),
+                                f->checkModIndex(f->id),
                                 [f, p = WeakRef(popup)](WebRes res) {
                                     if (res.isOk()) {
                                         auto metaRes = res.getPayload<GeodeMod>();
@@ -91,9 +117,9 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                                         };
 
                                         if (auto popup = p.lock()) popup->removeFromParent();
-                                        CommentsPopup::create(f->id, f->geodeTheme)->show();
-
                                         main::g_validMods.insert(f->id);
+
+                                        f->createPopup();
 
                                         return;
                                     };
@@ -134,11 +160,6 @@ class $nodeModify(CommentsModPopup, ModPopup) {
         };
 
         return Err("Could not cast this to FLAlertLayer");
-    };
-
-    arc::Future<WebRes> checkModIndex(std::string modID) {
-        auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID));
-        co_return webres::processResp(res);
     };
 };
 

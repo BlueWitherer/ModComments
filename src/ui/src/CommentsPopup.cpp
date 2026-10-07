@@ -140,6 +140,149 @@ asp::Instant CommentsPopup::s_lastRefresh;
 
 StringMap<GeodeMod> CommentsPopup::s_indexedMods;
 
+bool CommentsPopup::showInput() const {
+    return argon::signedIn() && Loader::get()->isModInstalled(m_modID);
+};
+
+arc::Future<WebRes> CommentsPopup::getGeodeData() {
+    co_return webres::processResp(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modID)));
+};
+
+arc::Future<WebRes> CommentsPopup::deleteComment(uint64_t id) {
+    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+
+    auto req = (co_await request::withAuthCo(std::move(token)))
+                   .param("comment", id);
+
+    co_return webres::processResp(co_await req.send("DELETE", "/v1/comments/delete"_api));
+};
+
+arc::Future<WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason) {
+    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+
+    matjson::Value body;
+    body["comment"] = id;
+    body["reason"] = std::move(reason);
+
+    auto req = (co_await request::withAuthCo(std::move(token)))
+                   .bodyJSON(body);
+
+    co_return webres::processResp(co_await req.post("/v1/reports/send"_api));
+};
+
+arc::Future<WebRes> CommentsPopup::getComments() {
+    auto req = request::base()
+                   .param("mod", m_modID)
+                   .param("page", m_page);
+
+    co_return webres::processResp(co_await req.get("/v1/comments/get"_api));
+};
+
+arc::Future<WebRes> CommentsPopup::sendComment() {
+    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+
+    matjson::Value body;
+    body["mod"] = m_modID;
+    body["content"] = *co_await async::waitForMainThread<std::string>([self = WeakRef(this)]() {
+        if (auto s = self.lock()) return std::string{s->m_inputBox->getString()};
+        return std::string{};
+    });
+    body["icons"] = user::getUserIcons();
+
+    auto req = (co_await request::withAuthCo(std::move(token)))
+                   .bodyJSON(body);
+
+    co_return webres::processResp(co_await req.post("/v1/comments/send"_api));
+};
+
+void CommentsPopup::updatePageLabel() {
+    m_pageLabel->setText(fmt::format("Page {}", m_page));
+};
+
+void CommentsPopup::refreshComments(bool skipCooldown) {
+    if (!skipCooldown) {
+        auto elapsed = asp::Instant::now().durationSince(s_lastRefresh).seconds();
+        if (elapsed < impl::g_refreshWait) return;
+    };
+
+    s_lastRefresh = asp::Instant::now();
+
+    m_commentList->setVisible(false);
+    m_commentMenu->setVisible(false);
+
+    m_pageNextBtn->setEnabled(false);
+    m_pagePrevBtn->setEnabled(false);
+
+    m_refreshBtn->setVisible(false);
+
+    m_loading->setVisible(true);
+
+    m_errLabel->setVisible(false);
+
+    m_commentList->m_contentLayer->removeAllChildren();
+
+    m_commentTask.spawn(
+        getComments(),
+        [this](WebRes res) {
+            if (res.isOk()) {
+                auto const fallback = [code = res.getCode()](std::string_view err) {
+                    Notification::create(fmt::format("Comments failed to load ({})", code), NotificationIcon::Error);
+                    log::error("{}: {}", code, err);
+                };
+
+                auto arrayRes = std::move(res).getPayloadValue().asArray();
+                if (arrayRes.isErr()) return fallback(arrayRes.unwrapErr());
+
+                auto const array = std::move(arrayRes).unwrap();
+                if (array.size() < 15) m_maxPage = m_page;
+
+                for (auto const& val : array) {
+                    auto cmmtRes = val.as<Comment>();
+                    if (cmmtRes.isErr()) {
+                        log::error("Failed: {}", cmmtRes.unwrapErr());
+                        continue;
+                    };
+
+                    auto cell = CommentItem::create(
+                        std::move(cmmtRes).unwrap(),
+                        m_commentList->getScaledContentWidth(),
+                        true,
+                        m_geodeTheme);
+                    cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
+                        switch (act) {
+                            default: return;
+
+                            case CommentAction::Delete: return onDelete(cmmt);
+                            case CommentAction::Report: return onReport(cmmt);
+                        };
+                    });
+
+                    m_commentList->m_contentLayer->addChild(cell);
+                };
+
+                m_pageNextBtn->setVisible(m_page < m_maxPage);
+                m_pagePrevBtn->setVisible(m_page > 1);
+
+                m_pageNextBtn->setEnabled(true);
+                m_pagePrevBtn->setEnabled(true);
+
+                m_commentList->m_contentLayer->updateLayout();
+                m_commentList->scrollToTop();
+
+                m_commentList->setVisible(true);
+                m_commentMenu->setVisible(showInput());
+            } else {
+                m_errLabel->setVisible(true);
+            };
+
+            updatePageLabel();
+
+            m_refreshBtn->setVisible(true);
+
+            m_loading->setVisible(false);
+        });
+};
+
 bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_modID = std::move(modID);
     m_geodeTheme = geodeTheme;
@@ -410,17 +553,6 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     refreshComments();
 
-    // queueInMainThread([self = WeakRef(this)]() {
-    //     if (auto s = self.lock()) {
-    //         if (s->mustAgreeToRules()) RulesPopup::create(
-    //             [s](bool agreed) {
-    //                 if (!agreed) s->removeFromParent();
-    //             },
-    //             s->m_geodeTheme)
-    //                                        ->show();
-    //     };
-    // });
-
     return true;
 };
 
@@ -465,32 +597,6 @@ void CommentsPopup::onSend(Button* sender) {
         });
 };
 
-arc::Future<WebRes> CommentsPopup::getGeodeData() {
-    co_return webres::processResp(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modID)));
-};
-
-arc::Future<WebRes> CommentsPopup::deleteComment(uint64_t id) {
-    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
-
-    auto req = (co_await request::withAuthCo(std::move(token)))
-                   .param("comment", id);
-
-    co_return webres::processResp(co_await req.send("DELETE", "/v1/comments/delete"_api));
-};
-
-arc::Future<WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason) {
-    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
-
-    matjson::Value body;
-    body["comment"] = id;
-    body["reason"] = std::move(reason);
-
-    auto req = (co_await request::withAuthCo(std::move(token)))
-                   .bodyJSON(body);
-
-    co_return webres::processResp(co_await req.post("/v1/reports/send"_api));
-};
-
 void CommentsPopup::onDelete(Comment const& cmmt) {
     if (m_commentActionTask.isPending()) return;
 
@@ -531,131 +637,6 @@ void CommentsPopup::onReport(Comment const& cmmt) {
         },
         m_geodeTheme)
         ->show();
-};
-
-arc::Future<WebRes> CommentsPopup::getComments() {
-    auto req = request::base()
-                   .param("mod", m_modID)
-                   .param("page", m_page);
-
-    co_return webres::processResp(co_await req.get("/v1/comments/get"_api));
-};
-
-arc::Future<WebRes> CommentsPopup::sendComment() {
-    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
-
-    matjson::Value body;
-    body["mod"] = m_modID;
-    body["content"] = *co_await async::waitForMainThread<std::string>([self = WeakRef(this)]() {
-        if (auto s = self.lock()) return std::string{s->m_inputBox->getString()};
-        return std::string{};
-    });
-    body["icons"] = user::getUserIcons();
-
-    auto req = (co_await request::withAuthCo(std::move(token)))
-                   .bodyJSON(body);
-
-    co_return webres::processResp(co_await req.post("/v1/comments/send"_api));
-};
-
-void CommentsPopup::updatePageLabel() {
-    m_pageLabel->setText(fmt::format("Page {}", m_page));
-};
-
-void CommentsPopup::refreshComments(bool skipCooldown) {
-    if (!skipCooldown) {
-        auto elapsed = asp::Instant::now().durationSince(s_lastRefresh).seconds();
-        if (elapsed < impl::g_refreshWait) return;
-    };
-
-    s_lastRefresh = asp::Instant::now();
-
-    m_inputBox->defocus();
-
-    m_commentList->setVisible(false);
-    m_commentMenu->setVisible(false);
-
-    m_pageNextBtn->setEnabled(false);
-    m_pagePrevBtn->setEnabled(false);
-
-    m_refreshBtn->setVisible(false);
-
-    m_loading->setVisible(true);
-
-    m_errLabel->setVisible(false);
-
-    m_commentList->m_contentLayer->removeAllChildren();
-
-    m_commentTask.spawn(
-        getComments(),
-        [this](WebRes res) {
-            if (res.isOk()) {
-                auto const fallback = [code = res.getCode()](std::string_view err) {
-                    Notification::create(fmt::format("Comments failed to load ({})", code), NotificationIcon::Error);
-                    log::error("{}: {}", code, err);
-                };
-
-                auto arrayRes = std::move(res).getPayloadValue().asArray();
-                if (arrayRes.isErr()) return fallback(arrayRes.unwrapErr());
-
-                auto const array = std::move(arrayRes).unwrap();
-                if (array.size() < 15) {
-                    m_maxPage = m_page;
-                };
-
-                for (auto const& val : array) {
-                    auto cmmtRes = val.as<Comment>();
-                    if (cmmtRes.isErr()) {
-                        log::error("Failed: {}", cmmtRes.unwrapErr());
-                        continue;
-                    };
-
-                    auto cell = CommentItem::create(
-                        std::move(cmmtRes).unwrap(),
-                        m_commentList->getScaledContentWidth(),
-                        true,
-                        m_geodeTheme);
-                    cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
-                        switch (act) {
-                            default: return;
-
-                            case CommentAction::Delete: return onDelete(cmmt);
-                            case CommentAction::Report: return onReport(cmmt);
-                        };
-                    });
-
-                    m_commentList->m_contentLayer->addChild(cell);
-                };
-
-                m_pageNextBtn->setVisible(m_page < m_maxPage);
-                m_pagePrevBtn->setVisible(m_page > 1);
-
-                m_pageNextBtn->setEnabled(true);
-                m_pagePrevBtn->setEnabled(true);
-
-                m_commentList->m_contentLayer->updateLayout();
-                m_commentList->scrollToTop();
-
-                m_commentList->setVisible(true);
-                m_commentMenu->setVisible(showInput());
-            } else {
-                m_errLabel->setVisible(true);
-            };
-
-            updatePageLabel();
-
-            m_refreshBtn->setVisible(true);
-
-            m_loading->setVisible(false);
-        });
-};
-
-bool CommentsPopup::showInput() const {
-    return argon::signedIn() && Loader::get()->isModInstalled(m_modID);
-};
-
-bool CommentsPopup::mustAgreeToRules() const {
-    return argon::signedIn() && !Mod::get()->getSavedValue("agreed-rules", false);
 };
 
 void CommentsPopup::onExit() {

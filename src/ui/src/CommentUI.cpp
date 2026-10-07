@@ -133,6 +133,19 @@ void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, Comm
     to->updateLayout();
 };
 
+arc::Future<WebRes> CommentItem::sendVote(CommentVote vote) {
+    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+
+    matjson::Value body;
+    body["comment"] = m_comment.id;
+    body["vote"] = static_cast<int8_t>(vote);
+
+    auto req = (co_await request::withAuthCo(std::move(token)))
+                   .bodyJSON(body);
+
+    co_return webres::processResp(co_await req.put("/v1/comments/vote"_api));
+};
+
 bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme) {
     m_comment = std::move(cmmt);
 
@@ -350,19 +363,6 @@ void CommentItem::voteCallback(CommentVote type) {
 
             completed();
         });
-};
-
-arc::Future<WebRes> CommentItem::sendVote(CommentVote vote) {
-    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
-
-    matjson::Value body;
-    body["comment"] = m_comment.id;
-    body["vote"] = static_cast<int8_t>(vote);
-
-    auto req = (co_await request::withAuthCo(std::move(token)))
-                   .bodyJSON(body);
-
-    co_return webres::processResp(co_await req.put("/v1/comments/vote"_api));
 };
 
 bool CommentItem::isSelf() const noexcept {
