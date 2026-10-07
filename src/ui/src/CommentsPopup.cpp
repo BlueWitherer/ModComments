@@ -236,11 +236,11 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
             sender->setVisible(m_page < m_maxPage);
 
-            refreshComments();
+            refreshComments(true);
         });
     m_pageNextBtn->setID("page-next-btn");
     m_pageNextBtn->setScale(0.875f);
-    m_pageNextBtn->setVisible(m_page < m_maxPage);
+    m_pageNextBtn->setVisible(false);
 
     if (auto spr = typeinfo_cast<CCSprite*>(m_pageNextBtn->getDisplayNode())) spr->setFlipX(true);
 
@@ -251,11 +251,11 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
             sender->setVisible(m_page > 1);
 
-            refreshComments();
+            refreshComments(true);
         });
     m_pagePrevBtn->setID("page-previous-btn");
     m_pagePrevBtn->setScale(0.875f);
-    m_pagePrevBtn->setVisible(m_page > 1);
+    m_pagePrevBtn->setVisible(false);
 
     m_mainLayer->addChildAtPosition(m_pageNextBtn, Anchor::Right, {17.5f, 0.f});
     m_mainLayer->addChildAtPosition(m_pagePrevBtn, Anchor::Left, {-17.5f, 0.f});
@@ -275,6 +275,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_inputBox = TextInput::create(m_commentMenu->getScaledContentWidth() - 2.5f, "Share your thoughts...", "chatFont.fnt");
     m_inputBox->setID("comment-text-input");
     m_inputBox->setScale(0.925f);
+    m_inputBox->setMaxCharCount(128);
     m_inputBox->setTextAlign(TextInputAlign::Left);
     m_inputBox->setCommonFilter(CommonFilter::Any);
 
@@ -550,9 +551,11 @@ arc::Future<WebRes> CommentsPopup::sendComment() {
     co_return webres::processResp(co_await req.post("/v1/comments/send"_api));
 };
 
-void CommentsPopup::refreshComments() {
-    auto elapsed = asp::Instant::now().durationSince(s_lastRefresh).seconds();
-    if (elapsed < impl::g_refreshWait) return;
+void CommentsPopup::refreshComments(bool skipCooldown) {
+    if (!skipCooldown) {
+        auto elapsed = asp::Instant::now().durationSince(s_lastRefresh).seconds();
+        if (elapsed < impl::g_refreshWait) return;
+    };
 
     s_lastRefresh = asp::Instant::now();
 

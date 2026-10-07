@@ -90,7 +90,7 @@ namespace cw::mod_cmmts {
 
             arc::Future<WebRes> getGeodeData();
 
-            void refreshComments();
+            void refreshComments(bool skipCooldown = false);
             bool showInput() const;
 
             bool mustAgreeToRules() const;

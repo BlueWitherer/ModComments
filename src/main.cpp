@@ -76,6 +76,20 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                                 checkModIndex(f->id),
                                 [f, p = WeakRef(popup)](WebRes res) {
                                     if (res.isOk()) {
+                                        auto metaRes = res.getPayload<GeodeMod>();
+                                        if (metaRes.isErr()) {
+                                            log::error("Failed to parse Geode index response: {}", metaRes.unwrapErr());
+                                            if (auto popup = p.lock()) popup->showFailMessage("Unknown error");
+
+                                            return;
+                                        };
+
+                                        auto const meta = std::move(metaRes).unwrap();
+                                        if (meta.versions.empty()) {
+                                            if (auto popup = p.lock()) popup->showFailMessage("Mod is delisted");
+                                            return;
+                                        };
+
                                         if (auto popup = p.lock()) popup->removeFromParent();
                                         CommentsPopup::create(f->id, f->geodeTheme)->show();
 
@@ -84,7 +98,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                                         return;
                                     };
 
-                                    if (auto popup = p.lock()) popup->showFailMessage("Comments unavailable");
+                                    if (auto popup = p.lock()) popup->showFailMessage("Mod is unavailable");
                                 });
                         });
                     tab->setID("comments-btn"_spr);
