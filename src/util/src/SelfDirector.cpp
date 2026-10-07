@@ -8,7 +8,7 @@ using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
 void SelfDirector::onClosePopup(UploadActionPopup*) {
-    if (!m_authOngoing) {
+    if (m_authOngoing) {
         Notification::create("Task cancelled", NotificationIcon::Error)->show();
         m_authTask.cancel();
     };

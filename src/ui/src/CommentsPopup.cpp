@@ -445,6 +445,7 @@ void CommentsPopup::onSend(Button* sender) {
                 s_lastComment = asp::Instant::now();
 
                 m_inputBox->setString("", false);
+                m_page = 1;
                 refreshComments();
             } else if (res.isErr()) {
                 m_refreshBtn->setVisible(true);
@@ -583,7 +584,6 @@ void CommentsPopup::refreshComments() {
 
                 auto const array = std::move(arrayRes).unwrap();
                 if (array.size() < 15) {
-                    m_page--;
                     m_maxPage = m_page;
                 };
 
