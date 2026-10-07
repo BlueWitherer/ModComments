@@ -62,6 +62,7 @@ namespace cw::mod_cmmts {
 
             geode::Button* m_pageNextBtn = nullptr;
             geode::Button* m_pagePrevBtn = nullptr;
+            geode::Label* m_pageLabel = nullptr;
 
             geode::ScrollLayer* m_commentList = nullptr;
             cocos2d::CCNode* m_commentMenu = nullptr;
@@ -89,6 +90,8 @@ namespace cw::mod_cmmts {
             geode::async::TaskHolder<WebRes> m_geodeTask;
 
             arc::Future<WebRes> getGeodeData();
+
+            void updatePageLabel();
 
             void refreshComments(bool skipCooldown = false);
             bool showInput() const;

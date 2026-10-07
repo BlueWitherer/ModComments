@@ -144,7 +144,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_modID = std::move(modID);
     m_geodeTheme = geodeTheme;
 
-    if (!Popup::init(425.f, 265.f, m_geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
+    if (!Popup::init(430.f, 265.f, m_geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
     setID(fmt::format("popup-{}", modID));
 
@@ -188,7 +188,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     };
 
     auto cmmtBorder = cue::createBackground(
-        {m_mainLayer->getScaledContentWidth() - 70.f, m_mainLayer->getScaledContentHeight() - 40.f},
+        {m_mainLayer->getScaledContentWidth() - 75.f, m_mainLayer->getScaledContentHeight() - 40.f},
         {
             .opacity = 255,
             .texture = "geode.loader/black-square.png",
@@ -238,7 +238,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
             refreshComments(true);
         });
-    m_pageNextBtn->setID("page-next-btn");
+    m_pageNextBtn->setID("next-page-btn");
     m_pageNextBtn->setScale(0.875f);
     m_pageNextBtn->setVisible(false);
 
@@ -253,12 +253,19 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
             refreshComments(true);
         });
-    m_pagePrevBtn->setID("page-previous-btn");
+    m_pagePrevBtn->setID("previous-page-btn");
     m_pagePrevBtn->setScale(0.875f);
     m_pagePrevBtn->setVisible(false);
 
-    m_mainLayer->addChildAtPosition(m_pageNextBtn, Anchor::Right, {17.5f, 0.f});
-    m_mainLayer->addChildAtPosition(m_pagePrevBtn, Anchor::Left, {-17.5f, 0.f});
+    m_mainLayer->addChildAtPosition(m_pageNextBtn, Anchor::Right, {-18.75f, -3.75f});
+    m_mainLayer->addChildAtPosition(m_pagePrevBtn, Anchor::Left, {18.75f, -3.75f});
+
+    m_pageLabel = Label::create("Page ?", "goldFont.fnt");
+    m_pageLabel->setID("page-label");
+    m_pageLabel->setScale(0.5f);
+    m_pageLabel->setAnchorPoint({0, 1});
+
+    m_mainLayer->addChildAtPosition(m_pageLabel, Anchor::BottomLeft, {0.f, -1.25f});
 
     auto sendMenuLayout = RowLayout::create()
                               ->setAutoScale(false)
@@ -496,7 +503,7 @@ void CommentsPopup::onDelete(Comment const& cmmt) {
             if (ok) m_commentActionTask.spawn(
                 deleteComment(cmmt.id),
                 [this](WebRes res) {
-                    if (res.isOk()) return refreshComments();
+                    if (res.isOk()) return refreshComments(true);
                     Notification::create(fmt::format("Failed to delete comment ({})", res.getCode()), NotificationIcon::Error)->show();
                 });
         });
@@ -551,6 +558,10 @@ arc::Future<WebRes> CommentsPopup::sendComment() {
     co_return webres::processResp(co_await req.post("/v1/comments/send"_api));
 };
 
+void CommentsPopup::updatePageLabel() {
+    m_pageLabel->setText(fmt::format("Page {}", m_page));
+};
+
 void CommentsPopup::refreshComments(bool skipCooldown) {
     if (!skipCooldown) {
         auto elapsed = asp::Instant::now().durationSince(s_lastRefresh).seconds();
@@ -558,6 +569,8 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
     };
 
     s_lastRefresh = asp::Instant::now();
+
+    m_inputBox->defocus();
 
     m_commentList->setVisible(false);
     m_commentMenu->setVisible(false);
@@ -628,6 +641,8 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
             } else {
                 m_errLabel->setVisible(true);
             };
+
+            updatePageLabel();
 
             m_refreshBtn->setVisible(true);
 
