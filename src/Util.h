@@ -26,13 +26,13 @@ namespace cw::mod_cmmts {
         };
 
         inline auto withAuth(std::string token) {
-            auto const acc = argon::getGameAccountData();
+            auto acc = argon::getGameAccountData();
 
             return base()
                 .param("account_id", acc.accountId)
                 .param("authtoken", std::move(token))
                 .param("user_id", acc.userId)
-                .param("username", acc.username);
+                .param("username", std::move(acc.username));
         };
 
         inline arc::Future<geode::utils::web::WebRequest> withAuthCo(std::string token) {

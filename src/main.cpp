@@ -12,7 +12,7 @@ using namespace cw::mod_cmmts;
 namespace cw::mod_cmmts {
     namespace main {
         static constexpr std::string_view g_urlGeode = "https://geode-sdk.org/mods/";
-        static StringSet g_validMods;
+        static StringSet validMods;
     };
 };
 
@@ -112,7 +112,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                     auto tab = CCMenuItemExt::createSpriteExtra(
                         tabSprite,
                         [f](auto) {
-                            if (auto const it = main::g_validMods.find(f->id); it != main::g_validMods.end()) return f->createPopup();
+                            if (auto const it = main::validMods.find(f->id); it != main::validMods.end()) return f->createPopup();
 
                             auto delegate = IndexTaskDelegate::get();
                             auto& popup = delegate->createProgressPopup();
@@ -136,7 +136,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                                         };
 
                                         popup->removeFromParent();
-                                        main::g_validMods.insert(f->id);
+                                        main::validMods.insert(f->id);
 
                                         f->createPopup();
 

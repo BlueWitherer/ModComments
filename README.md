@@ -25,6 +25,7 @@ You can only post comments on mods you currently have installed on your client, 
 ---
 
 ![preview](previews/preview-1.png)
+![preview](previews/preview-2.png)
 
 ---
 
