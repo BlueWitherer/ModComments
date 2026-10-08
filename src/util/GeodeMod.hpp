@@ -17,7 +17,7 @@ namespace cw::mod_cmmts {
     struct GeodeMod final {
         std::string id;
         std::vector<GeodeModDev> developers;
-        std::vector<GeodeModVersion> versions;
+        asp::SmallVec<GeodeModVersion, 1> versions;
     };
 };
 
