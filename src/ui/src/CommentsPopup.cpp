@@ -235,37 +235,45 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
                 if (arrayRes.isErr()) return fallback(arrayRes.unwrapErr());
 
                 auto const array = std::move(arrayRes).unwrap();
-                if (m_page <= 1 || !array.empty()) {
-                    if (array.size() < 15) m_maxPage = m_page;
 
-                    for (auto const& val : array) {
-                        auto cmmtRes = val.as<Comment>();
-                        if (cmmtRes.isErr()) {
-                            log::error("Failed: {}", cmmtRes.unwrapErr());
-                            continue;
-                        };
+                std::vector<Comment> comments;
+                comments.reserve(array.size());
 
-                        auto cell = CommentItem::create(
-                            std::move(cmmtRes).unwrap(),
-                            m_commentList->getScaledContentWidth(),
-                            true,
-                            m_geodeTheme);
-                        cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
-                            switch (act) {
-                                default: return;
-
-                                case CommentAction::Delete: return onDelete(cmmt);
-                                case CommentAction::Report: return onReport(cmmt);
-                            };
-                        });
-
-                        m_commentList->m_contentLayer->addChild(cell);
+                for (auto const& val : array) {
+                    auto cmmtRes = val.as<Comment>();
+                    if (cmmtRes.isErr()) {
+                        log::error("Failed: {}", cmmtRes.unwrapErr());
+                        continue;
                     };
-                } else {
+
+                    comments.push_back(std::move(cmmtRes).unwrap());
+                };
+
+                if (comments.empty() && m_page > 1) {
                     m_page--;
                     m_maxPage = m_page;
 
                     return refreshComments(true);
+                };
+
+                m_maxPage = (array.size() == 15) ? m_page + 1 : m_page;
+
+                for (auto& comment : comments) {
+                    auto cell = CommentItem::create(
+                        std::move(comment),
+                        m_commentList->getScaledContentWidth(),
+                        true,
+                        m_geodeTheme);
+                    cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
+                        switch (act) {
+                            default: return;
+
+                            case CommentAction::Delete: return onDelete(cmmt);
+                            case CommentAction::Report: return onReport(cmmt);
+                        };
+                    });
+
+                    m_commentList->m_contentLayer->addChild(cell);
                 };
 
                 m_pageNextBtn->setVisible(m_page < m_maxPage);
