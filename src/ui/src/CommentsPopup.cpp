@@ -450,14 +450,9 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     };
 
     auto sendBtnSpr = EditorButtonSprite::createWithSpriteFrameName(
-        "GJ_chatBtn_01_001.png",
-        0.925f,
+        m_geodeTheme ? "send_icon_geode.png"_spr : "send_icon_gd.png"_spr,
+        0.875f,
         m_geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Green);
-
-    if (auto ico = sendBtnSpr->getChildByType<CCSprite>(0)) {
-        ico->setFlipX(true);
-        ico->setRotation(-90);
-    };
 
     auto sendBtn = Button::createWithNode(
         sendBtnSpr,

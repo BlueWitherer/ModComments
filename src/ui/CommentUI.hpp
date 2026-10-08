@@ -9,6 +9,11 @@
 #include <Geode/Geode.hpp>
 
 namespace cw::mod_cmmts {
+    enum class CommentUserStatus : uint8_t {
+        Owner,
+        Staff,
+    };
+
     namespace ui {
         class CommentReportPopup final : public geode::Popup {
             using Callback = geode::Function<void(Comment const&, std::string)>;
@@ -32,6 +37,7 @@ namespace cw::mod_cmmts {
             Comment m_comment;
             Callback m_callback = nullptr;
 
+            cocos2d::CCNode* m_userMenu = nullptr;
             geode::Label* m_contentLabel = nullptr;
 
             geode::Button* m_likeBtn = nullptr;
@@ -44,6 +50,7 @@ namespace cw::mod_cmmts {
 
             arc::Future<WebRes> sendVote(CommentVote vote);
 
+            void addBadge(CommentUserStatus type);
             void addVoteNodes(cocos2d::CCNode* to, geode::Button*& btn, geode::Ref<geode::Label>& label, CommentVote type);
 
         protected:

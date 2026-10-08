@@ -58,7 +58,7 @@ bool WebRes::isErr() const noexcept {
 
 WebRes webres::processResp(geode::utils::web::WebResponse const& res) {
     auto const fallback = [&res](std::string err) {
-        log::error("Failed to sync game settings: {}", err);
+        log::error("Failed to process web response: {}", err);
         return WebRes(std::nullptr_t(), std::move(err), res.code());
     };
 

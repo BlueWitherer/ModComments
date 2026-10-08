@@ -17,9 +17,37 @@ namespace cw::mod_cmmts {
             auto userRes = SelfDirector::get()->getCurrentUser();
             if (userRes.isErr()) return false;
 
-            return userRes.unwrap().staff;
+            auto staff = userRes.unwrap().staff;
+            log::trace("user {} staff", staff ? "is" : "is not");
+            return staff;
         };
 
+        struct CommentUserStatusData final {
+            std::string name;
+            std::string description;
+            std::string badgeSprite;
+        };
+
+        static CommentUserStatusData const& getDataForStatus(CommentUserStatus status) {
+            static auto owner = CommentUserStatusData{
+                "Mod Comments Owner",
+                "is the <cg>Mod Comments owner</c>. They own and actively develop this mod.",
+                "badge_owner.png"_spr,
+            };
+
+            static auto staff = CommentUserStatusData{
+                "Mod Comment Staff",
+                "is a <cg>Comment moderator</c>. They oversee comment sections and review user reports to keep conversations safe for everyone.",
+                "badge_staff.png"_spr,
+            };
+
+            switch (status) {
+                default: [[fallthrough]];
+
+                case CommentUserStatus::Staff: return staff;
+                case CommentUserStatus::Owner: return owner;
+            };
+        };
     };
 };
 
@@ -109,6 +137,27 @@ CommentReportPopup* CommentReportPopup::create(Comment const& cmmt, Callback&& c
     return nullptr;
 };
 
+void CommentItem::addBadge(CommentUserStatus type) {
+    auto const& info = impl::getDataForStatus(type);
+
+    auto btn = Button::createWithSpriteFrameName(
+        info.badgeSprite,
+        [this, &info](auto) {
+            createQuickPopup(
+                info.name.c_str(),
+                fmt::format("<cy>{}</c> {}", m_comment.author.username, info.description),
+                "OK",
+                nullptr,
+                nullptr);
+        });
+    btn->setID("badge-info-btn");
+
+    cue::rescaleToMatch(btn, 12.5f);
+
+    m_userMenu->addChild(btn);
+    m_userMenu->updateLayout();
+};
+
 void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, CommentVote type) {
     auto like = type == CommentVote::Like;
 
@@ -180,12 +229,12 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
                               ->setAutoGrowAxis(0.f)
                               ->setGrowCrossAxis(true);
 
-    auto userMenu = CCNode::create();
-    userMenu->setID("username-container");
-    userMenu->setAnchorPoint({0, 1});
-    userMenu->setLayout(userMenuLayout);
+    m_userMenu = CCNode::create();
+    m_userMenu->setID("username-container");
+    m_userMenu->setAnchorPoint({0, 1});
+    m_userMenu->setLayout(userMenuLayout);
 
-    addChildAtPosition(userMenu, Anchor::TopLeft, {5.f, -5.f});
+    addChildAtPosition(m_userMenu, Anchor::TopLeft, {5.f, -5.f});
 
     auto& user = m_comment.author;
 
@@ -194,7 +243,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
 
     cue::rescaleToMatch(icon, 15.f);
 
-    userMenu->addChild(icon);
+    m_userMenu->addChild(icon);
 
     auto username = Button::createWithLabel(
         user.username,
@@ -205,9 +254,9 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
     username->setID("view-player-btn");
     username->setScale(0.625f);
 
-    userMenu->addChild(username);
+    m_userMenu->addChild(username);
 
-    userMenu->updateLayout();
+    m_userMenu->updateLayout();
 
     m_contentLabel = Label::create(m_comment.content, "geode.loader/mdFont.fnt");
     m_contentLabel->setID("comment-content-label");
@@ -246,7 +295,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
         if (argon::signedIn()) {
             Button* actionBtn = nullptr;
 
-            if (isSelf() || impl::isStaff()) {
+            if (impl::isStaff() || isSelf()) {
                 actionBtn = Button::createWithSpriteFrameName(
                     "GJ_trashBtn_001.png",
                     [this](auto) {
@@ -287,6 +336,12 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
     time->setOpacity(200);
 
     addChildAtPosition(time, Anchor::BottomRight, {-5.f, 5.f});
+
+    if (m_comment.author.id == CW_MODCOMMENTS_OWNER) {
+        addBadge(CommentUserStatus::Owner);
+    } else if (m_comment.author.staff) {
+        addBadge(CommentUserStatus::Staff);
+    };
 
     return true;
 };

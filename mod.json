@@ -8,7 +8,7 @@
     },
     "id": "cheeseworks.modcomments",
     "name": "Mod Comments",
-    "version": "1.0.0-beta",
+    "version": "1.0.0",
     "developers": [
         "Cheeseworks"
     ],
@@ -28,10 +28,15 @@
     "incompatibilities": {
         "user95401.geode-mod-comments": ">=2.0.0-alpha"
     },
-    "api": {
-        "include": [
-            "include/*.hpp"
-        ]
+    "resources": {
+        "spritesheets": {
+            "CW_MCMMTS_badges": [
+                "resources/badges/*.png"
+            ],
+            "CW_MCMMTS_btns": [
+                "resources/btns/*.png"
+            ]
+        }
     },
     "settings": {
         "btn": {
