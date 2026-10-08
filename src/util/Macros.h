@@ -1,6 +1,6 @@
 #pragma once
 
-#ifndef CW_TESTING
+#ifdef CW_TESTING
 #define CW_MODCOMMENTS_WEB_BASEURL "http://localhost:6969"
 #else
 #define CW_MODCOMMENTS_WEB_BASEURL "https://modcomments.cheeseworks.gay"

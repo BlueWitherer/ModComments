@@ -20,13 +20,12 @@ Access **comment sections for mods directly in-game**. Talk about your experienc
 ### Commenting
 On any Geode mod information pop-up, you'll find a tab for comments. Press it to open a new pop-up with comments from people who have downloaded the mod. Feel free to look for others' opinions on that mod, or leave your own!
 
-> [!WARNING]
-> *Comments are unavailable for mods **not on the official Geode index**.*
+You can only post comments on mods you currently have installed on your client, but you can always look at comments on *any mod* as long as it's publicly available on Geode!
+
 
 ---
 
 ![preview](previews/preview-1.png)
-![preview](previews/preview-2.png)
 
 ---
 
