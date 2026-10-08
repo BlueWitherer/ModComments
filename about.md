@@ -1,4 +1,4 @@
-# Mod Comments
+# ![🗨](frame:GJ_chatBtn_001.png?scale=0.45) Mod Comments
 **Discuss mods directly in-game.**
 
 *by [Cheeseworks](user:6408873)!*

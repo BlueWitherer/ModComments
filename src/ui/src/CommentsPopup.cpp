@@ -196,7 +196,8 @@ arc::Future<WebRes> CommentsPopup::sendComment() {
 };
 
 void CommentsPopup::updatePageLabel() {
-    m_pageLabel->setText(fmt::format("Page {}", m_page));
+    auto count = m_commentList->m_contentLayer->getChildrenCount();
+    m_pageLabel->setText(fmt::format("Page {}, {} {}", m_page, count, plurals::appendS("comment", count)));
 };
 
 void CommentsPopup::refreshComments(bool skipCooldown) {
@@ -234,30 +235,37 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
                 if (arrayRes.isErr()) return fallback(arrayRes.unwrapErr());
 
                 auto const array = std::move(arrayRes).unwrap();
-                if (array.size() < 15) m_maxPage = m_page;
+                if (m_page <= 1 || !array.empty()) {
+                    if (array.size() < 15) m_maxPage = m_page;
 
-                for (auto const& val : array) {
-                    auto cmmtRes = val.as<Comment>();
-                    if (cmmtRes.isErr()) {
-                        log::error("Failed: {}", cmmtRes.unwrapErr());
-                        continue;
-                    };
-
-                    auto cell = CommentItem::create(
-                        std::move(cmmtRes).unwrap(),
-                        m_commentList->getScaledContentWidth(),
-                        true,
-                        m_geodeTheme);
-                    cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
-                        switch (act) {
-                            default: return;
-
-                            case CommentAction::Delete: return onDelete(cmmt);
-                            case CommentAction::Report: return onReport(cmmt);
+                    for (auto const& val : array) {
+                        auto cmmtRes = val.as<Comment>();
+                        if (cmmtRes.isErr()) {
+                            log::error("Failed: {}", cmmtRes.unwrapErr());
+                            continue;
                         };
-                    });
 
-                    m_commentList->m_contentLayer->addChild(cell);
+                        auto cell = CommentItem::create(
+                            std::move(cmmtRes).unwrap(),
+                            m_commentList->getScaledContentWidth(),
+                            true,
+                            m_geodeTheme);
+                        cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
+                            switch (act) {
+                                default: return;
+
+                                case CommentAction::Delete: return onDelete(cmmt);
+                                case CommentAction::Report: return onReport(cmmt);
+                            };
+                        });
+
+                        m_commentList->m_contentLayer->addChild(cell);
+                    };
+                } else {
+                    m_page--;
+                    m_maxPage = m_page;
+
+                    return refreshComments(true);
                 };
 
                 m_pageNextBtn->setVisible(m_page < m_maxPage);
@@ -405,7 +413,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_mainLayer->addChildAtPosition(m_pageNextBtn, Anchor::Right, {-18.75f, -3.75f});
     m_mainLayer->addChildAtPosition(m_pagePrevBtn, Anchor::Left, {18.75f, -3.75f});
 
-    m_pageLabel = Label::create("Page ?", "goldFont.fnt");
+    m_pageLabel = Label::create("Loading...", "goldFont.fnt");
     m_pageLabel->setID("page-label");
     m_pageLabel->setScale(0.5f);
     m_pageLabel->setAnchorPoint({1, 1});
@@ -577,9 +585,11 @@ void CommentsPopup::onSend(Button* sender) {
 
     auto elapsed = asp::Instant::now().durationSince(s_lastComment).seconds();
     if (elapsed < impl::g_commentWait) {
+        auto remaining = impl::g_commentWait - elapsed;
+
         createQuickPopup(
             "Slow Down!",
-            fmt::format("You must <co>wait {} seconds before sending your next comment</c>!", impl::g_commentWait - elapsed),
+            fmt::format("You must <co>wait {} {} before sending your next comment</c>!", remaining, plurals::appendS("second", remaining)),
             "OK",
             nullptr,
             nullptr);
