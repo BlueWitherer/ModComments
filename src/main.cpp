@@ -1,5 +1,7 @@
 #include <Util.h>
 
+#include <util/base/Singleton.hpp>
+
 #include <Geode/Geode.hpp>
 
 #include <alphalaneous.alphas_geode_utils/include/ObjectModify.hpp>
@@ -40,17 +42,35 @@ $on_game(Loaded) {
         .leak();
 };
 
+class IndexTaskDelegate final : public cw::mod_cmmts::base::Singleton<IndexTaskDelegate>, public UploadPopupDelegate {
+public:
+    TaskHolder<WebRes> m_checkIndexTask;
+    Ref<UploadActionPopup> m_popup = nullptr;
+
+    Ref<UploadActionPopup>& createProgressPopup() {
+        cue::resetNode(m_popup);
+
+        m_popup = UploadActionPopup::create(this, "Checking Geode index...");
+        m_popup->show();
+
+        return m_popup;
+    };
+
+    void onClosePopup(UploadActionPopup*) override {
+        m_checkIndexTask.cancel();
+        cue::resetNode(m_popup);
+    };
+
+    arc::Future<WebRes> checkModIndex(std::string modID) {
+        auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID));
+        co_return webres::processResp(res);
+    };
+};
+
 class $nodeModify(CommentsModPopup, ModPopup) {
     struct Fields final {
         std::string id;
         bool geodeTheme = false;
-
-        TaskHolder<WebRes> checkIndexTask;
-
-        arc::Future<WebRes> checkModIndex(std::string modID) {
-            auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID));
-            co_return webres::processResp(res);
-        };
 
         void createPopup() {
             if (!mustAgreeToRules()) return CommentsPopup::create(id, geodeTheme)->show();
@@ -69,7 +89,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
         };
 
         bool mustAgreeToRules() const {
-            return argon::signedIn() && !Mod::get()->getSavedValue("agreed-rules", false);
+            return argon::signedIn() && Loader::get()->isModInstalled(id) && !Mod::get()->getSavedValue("agreed-rules", false);
         };
     };
 
@@ -95,28 +115,28 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                         [f](auto) {
                             if (auto const it = main::g_validMods.find(f->id); it != main::g_validMods.end()) return f->createPopup();
 
-                            auto popup = UploadActionPopup::create(nullptr, fmt::format("Checking Geode index...", f->id));
-                            popup->show();
+                            auto delegate = IndexTaskDelegate::get();
+                            auto& popup = delegate->createProgressPopup();
 
-                            f->checkIndexTask.spawn(
-                                f->checkModIndex(f->id),
-                                [f, p = WeakRef(popup)](WebRes res) {
+                            delegate->m_checkIndexTask.spawn(
+                                delegate->checkModIndex(f->id),
+                                [f, &popup](WebRes res) {
                                     if (res.isOk()) {
                                         auto metaRes = res.getPayload<GeodeMod>();
                                         if (metaRes.isErr()) {
                                             log::error("Failed to parse Geode index response: {}", metaRes.unwrapErr());
-                                            if (auto popup = p.lock()) popup->showFailMessage("Unknown error");
+                                            popup->showFailMessage("Unknown error");
 
                                             return;
                                         };
 
                                         auto const meta = std::move(metaRes).unwrap();
                                         if (meta.versions.empty()) {
-                                            if (auto popup = p.lock()) popup->showFailMessage("Mod is delisted");
+                                            popup->showFailMessage("Mod is delisted");
                                             return;
                                         };
 
-                                        if (auto popup = p.lock()) popup->removeFromParent();
+                                        popup->removeFromParent();
                                         main::g_validMods.insert(f->id);
 
                                         f->createPopup();
@@ -124,7 +144,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                                         return;
                                     };
 
-                                    if (auto popup = p.lock()) popup->showFailMessage("Mod is unavailable");
+                                    popup->showFailMessage("Mod is unavailable");
                                 });
                         });
                     tab->setID("comments-btn"_spr);

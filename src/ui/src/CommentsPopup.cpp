@@ -348,7 +348,9 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     cmmtBorder->addChildAtPosition(m_loading, Anchor::Center);
 
-    m_commentList = ScrollLayer::create({cmmtBorder->getScaledContentWidth() - 12.5f, cmmtBorder->getScaledContentHeight() - (showInput() ? 45.f : 25.f)});
+    auto isShowInput = showInput();
+
+    m_commentList = ScrollLayer::create({cmmtBorder->getScaledContentWidth() - 12.5f, cmmtBorder->getScaledContentHeight() - (isShowInput ? 45.f : 25.f)});
     m_commentList->setID("comment-list");
     m_commentList->setAnchorPoint({0.5, 1});
     m_commentList->ignoreAnchorPointForPosition(false);
@@ -432,9 +434,9 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     m_commentMenu->addChild(m_inputBox);
 
-    m_commentMenu->setVisible(showInput());
+    m_commentMenu->setVisible(isShowInput);
 
-    if (!showInput()) {
+    if (!isShowInput) {
         auto install = Label::createRich(
             Loader::get()->isModInstalled(m_modID)
                 ? (argon::signedIn()
@@ -456,10 +458,11 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     auto sendBtn = Button::createWithNode(
         sendBtnSpr,
-        [this](Button* sender) {
-            onSend(sender);
+        [this, isShowInput](Button* sender) {
+            if (isShowInput) onSend(sender);
         });
     sendBtn->setID("send-comment-btn");
+    sendBtn->setEnabled(isShowInput);
 
     cue::rescaleToMatch(sendBtn, 26.25f);
 
@@ -568,6 +571,8 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 };
 
 void CommentsPopup::onSend(Button* sender) {
+    if (!showInput()) return;
+
     m_inputBox->defocus();
 
     auto elapsed = asp::Instant::now().durationSince(s_lastComment).seconds();
@@ -595,8 +600,8 @@ void CommentsPopup::onSend(Button* sender) {
             if (res.isOk()) {
                 s_lastComment = asp::Instant::now();
 
-                m_inputBox->setString("", false);
                 m_page = 1;
+                m_inputBox->setString("", false);
                 refreshComments();
             } else if (res.isErr()) {
                 m_refreshBtn->setVisible(true);
