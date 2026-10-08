@@ -347,14 +347,14 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
 };
 
 void CommentItem::voteCallback(CommentVote type) {
-    auto like = type == CommentVote::Like;
+    auto like = (type == CommentVote::Like);
 
     auto prevVote = m_comment.myVote;
 
+    if (prevVote == (like ? 1 : -1)) type = CommentVote::None;
+
     auto prevLikes = m_comment.likes;
     auto prevDislikes = m_comment.dislikes;
-
-    if (prevVote == (like ? 1 : -1)) type = CommentVote::None;
 
     switch (type) {
         case CommentVote::Like: {

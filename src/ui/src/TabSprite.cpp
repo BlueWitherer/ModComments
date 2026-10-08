@@ -22,7 +22,7 @@ bool TabSprite::init(ZStringView iconFrame, std::string text, float width, bool 
 
     m_deselectedBG = NineSlice::createWithSpriteFrameName("geode.loader/tab-bg.png");
     m_deselectedBG->setScale(0.8f);
-    m_deselectedBG->setContentSize(itemSize / .8f);
+    m_deselectedBG->setContentSize(itemSize / 0.8f);
     m_deselectedBG->setColor(colors->color3b("geode.loader/mod-list-tab-deselected-bg"));
 
     addChildAtPosition(m_deselectedBG, Anchor::Center);
@@ -39,7 +39,7 @@ bool TabSprite::init(ZStringView iconFrame, std::string text, float width, bool 
     addChildAtPosition(m_selectedBG, Anchor::Center);
 
     m_icon = CCSprite::createWithSpriteFrameName(iconFrame.c_str());
-    limitNodeSize(m_icon, iconSize, 3.f, .1f);
+    limitNodeSize(m_icon, iconSize, 3.f, 0.1f);
 
     addChildAtPosition(m_icon, Anchor::Left, {16.f, 0.f}, false);
 

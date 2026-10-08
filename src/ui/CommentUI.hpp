@@ -54,9 +54,6 @@ namespace cw::mod_cmmts {
             void addVoteNodes(cocos2d::CCNode* to, geode::Button*& btn, geode::Ref<geode::Label>& label, CommentVote type);
 
         protected:
-            void onLike();
-            void onDislike();
-
             void voteCallback(CommentVote t);
 
             bool isSelf() const noexcept;
