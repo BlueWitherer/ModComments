@@ -43,19 +43,6 @@ namespace cw::mod_cmmts {
     };
 
     namespace popups {
-        static constexpr auto g_rulesText =
-            "**Upon posting comments, you agree to adhere to the following <cr>rules</c>.**\n\n"
-            "---\n\n"
-            "![🛑](frame:geode.loader/info-alert.png?scale=0.375) <cr>*[Mod Comments](mod:cheeseworks.modcomments) was made for users to leave feedback on mods. **Mod developers are NOT responsible for providing user support through comments**, please __instead contact them through their own official channels__.*</c>\n\n"
-            "---\n\n"
-            "1. **Be civil.** - Engage in conversations that are <cg>respectful, fun, and constructive</c>. Any <co>comments made with the intention to hurt another individual or community</c> are **strictly prohibited**.\n\n"
-            "2. **Don't spam.** - Avoid <co>going too off-topic in the comments</c>. Attempting to <co>overload our servers</c> or <co>attempting to bypass spam protections</c> will result in **rate-limiting & IP bans**.\n\n"
-            "3. **No NSFW.** - <co>Inappropriate discussions</c> are **not allowed**. <cg>Respect boundares</c>, and keep comment sections <cg>safe and welcoming for everyone</c>!\n\n"
-            "4. **Staff decisions**. - Moderators are instructed to take <cg>whatever means necessary to keep chats safe</c>. If you believe action has been <co>wrongfully taken against you</c>, you can communicate your concerns in [Cheeseworks's Discord server](https://www.dsc.gg/cheeseworks)!\n\n"
-            "5. **Common sense.** - Not every rule can be written. <co>Acting in bad faith</c> because specific unethical behaviors aren't explicitly mentioned here **will still result in punishments**.\n\n"
-            "---\n\n"
-            "![🗨️](frame:gj_discordIcon_001.png?scale=0.375) **If you need help, join my [support Discord server](https://www.dsc.gg/cheeseworks) and ask! :)**";
-
         void showRules();
     };
 

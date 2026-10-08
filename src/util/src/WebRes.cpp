@@ -53,7 +53,7 @@ bool WebRes::isOk() const noexcept {
 };
 
 bool WebRes::isErr() const noexcept {
-    return m_payload.isNull() || !m_error.empty();
+    return m_payload.isNull() || m_code >= 400 || !m_error.empty();
 };
 
 WebRes webres::processResp(geode::utils::web::WebResponse const& res) {

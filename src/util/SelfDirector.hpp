@@ -12,7 +12,6 @@ namespace cw::mod_cmmts {
         CommentUser m_user;
         bool m_authorized = false;
 
-        std::atomic_bool m_authOngoing{false};
         geode::Ref<UploadActionPopup> m_authProgPopup = nullptr;
 
         geode::async::TaskHolder<WebRes> m_authTask;
@@ -29,8 +28,6 @@ namespace cw::mod_cmmts {
 
         void setCurrentUser(CommentUser user);
         void setReport(uint64_t id, bool unset = false);
-
-        void authProgressing(bool inProgress);
 
         geode::Result<const CommentUser> getCurrentUser() const noexcept;
         bool isAuthorized() const noexcept;

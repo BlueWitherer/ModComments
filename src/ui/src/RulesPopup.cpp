@@ -36,7 +36,7 @@ bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
 
     m_mainLayer->addChildAtPosition(label, Anchor::Top, {0.f, -32.5f});
 
-    auto rulesText = MDTextArea::create(popups::g_rulesText, {m_mainLayer->getScaledContentWidth() - 45.f, m_mainLayer->getScaledContentHeight() - 87.5f});
+    auto rulesText = MDTextArea::create(rules::fullText, {m_mainLayer->getScaledContentWidth() - 45.f, m_mainLayer->getScaledContentHeight() - 87.5f});
     rulesText->setID("rules-text-area");
     rulesText->setZOrder(9);
 

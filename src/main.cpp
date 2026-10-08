@@ -30,7 +30,6 @@ $on_game(Loaded) {
             if (userRes.isErr()) return log::error("Failed to parse payload: {}", userRes.unwrapErr());
 
             sd->setCurrentUser(std::move(userRes).unwrap());
-            sd->authProgressing(false);
         });
 
     ButtonSettingPressedEvent(
@@ -186,7 +185,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
 void popups::showRules() {
     MDPopup::create(
         "Comment Rules",
-        popups::g_rulesText,
+        rules::fullText,
         "OK")
         ->show();
 };

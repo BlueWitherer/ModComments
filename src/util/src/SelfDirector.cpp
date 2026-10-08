@@ -8,13 +8,12 @@ using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
 void SelfDirector::onClosePopup(UploadActionPopup*) {
-    if (m_authOngoing) {
+    if (m_authTask.isPending()) {
         Notification::create("Task cancelled", NotificationIcon::Error)->show();
         m_authTask.cancel();
     };
 
     cue::resetNode(m_authProgPopup);
-    authProgressing(false);
 };
 
 void SelfDirector::setReport(uint64_t id, bool unset) {
@@ -26,14 +25,8 @@ void SelfDirector::setReport(uint64_t id, bool unset) {
     m_reportedAds.insert(id);
 };
 
-void SelfDirector::authProgressing(bool inProgress) {
-    m_authOngoing = inProgress;
-};
-
 void SelfDirector::startAuth() {
-    if (m_authOngoing) return;
-
-    authProgressing(true);
+    if (m_authTask.isPending()) return;
 
     m_authProgPopup = UploadActionPopup::create(this, "Authorizing...");
     m_authProgPopup->show();
@@ -57,12 +50,10 @@ void SelfDirector::startAuth() {
             if (getRes.isErr()) return m_authProgPopup->showFailMessage("Unknown error");
 
             m_authProgPopup->showSuccessMessage(fmt::format("Authorized as {}", getRes.unwrap().username));
-            authProgressing(false);
         });
 };
 
 arc::Future<WebRes> SelfDirector::authorize() {
-    authProgressing(true);
     log::warn("Authorizing user...");
 
     CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
