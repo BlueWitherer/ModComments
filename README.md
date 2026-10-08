@@ -22,7 +22,6 @@ On any Geode mod information pop-up, you'll find a tab for comments. Press it to
 
 You can only post comments on mods you currently have installed on your client, but you can always look at comments on *any mod* as long as it's publicly available on Geode!
 
-
 ---
 
 ![preview](previews/preview-1.png)
