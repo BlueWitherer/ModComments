@@ -57,10 +57,12 @@ Result<GeodeMod> matjson::Serialize<GeodeMod>::fromJson(matjson::Value const& va
     };
 
     GEODE_UNWRAP_INTO(auto const vers, value["versions"].asArray());
-    out.versions.reserve(1);
+    if (!vers.empty()) {
+        out.versions.reserve(1);
 
-    GEODE_UNWRAP_INTO(auto ver, vers[0].as<GeodeModVersion>());
-    out.versions.push_back(std::move(ver));
+        GEODE_UNWRAP_INTO(auto ver, vers[0].as<GeodeModVersion>());
+        out.versions.push_back(std::move(ver));
+    };
 
     return Ok(std::move(out));
 };
