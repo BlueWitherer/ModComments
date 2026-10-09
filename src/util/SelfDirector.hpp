@@ -36,17 +36,7 @@ namespace cw::mod_cmmts {
     };
 
     namespace user {
-        inline auto getUserIcons() {
-            auto gm = GameManager::sharedState();
-
-            return UserIcons{
-                static_cast<uint16_t>(gm->activeIconForType(gm->m_playerIconType)),
-                gm->m_playerIconType,
-                static_cast<uint8_t>(gm->getPlayerColor()),
-                static_cast<uint8_t>(gm->getPlayerColor2()),
-                static_cast<uint8_t>(gm->getPlayerGlowColor()),
-                gm->m_playerGlow,
-            };
-        };
+        UserIcons getUserIcons();
+        arc::Future<UserIcons> getUserIconsCo();
     };
 };

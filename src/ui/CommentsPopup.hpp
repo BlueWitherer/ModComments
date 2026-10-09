@@ -1,5 +1,7 @@
 #pragma once
 
+#include <util/base/InputLimitLabelDelegate.hpp>
+
 #include <util/Comments.hpp>
 #include <util/GeodeMod.hpp>
 #include <util/WebRes.hpp>
@@ -42,7 +44,7 @@ namespace cw::mod_cmmts {
             static CommentModNode* create(std::string id, std::optional<GeodeMod> mod = std::nullopt);
         };
 
-        class CommentsPopup final : public geode::Popup {
+        class CommentsPopup final : public geode::Popup, private base::InputLimitLabelDelegate {
             struct LinkButton final {
                 std::string id;
                 std::string sprite;
@@ -67,8 +69,6 @@ namespace cw::mod_cmmts {
             geode::ScrollLayer* m_commentList = nullptr;
             cocos2d::CCNode* m_commentMenu = nullptr;
 
-            geode::TextInput* m_inputBox = nullptr;
-
             geode::Label* m_errLabel = nullptr;
 
             geode::Button* m_refreshBtn = nullptr;
@@ -82,7 +82,7 @@ namespace cw::mod_cmmts {
             geode::async::TaskHolder<WebRes> m_commentActionTask;
 
             arc::Future<WebRes> getComments();
-            arc::Future<WebRes> sendComment();
+            arc::Future<WebRes> sendComment(std::string content);
 
             arc::Future<WebRes> deleteComment(uint64_t id);
             arc::Future<WebRes> reportComment(uint64_t id, std::string reason);

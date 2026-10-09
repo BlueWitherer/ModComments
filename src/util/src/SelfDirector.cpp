@@ -7,6 +7,25 @@
 using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
+UserIcons user::getUserIcons() {
+    auto gm = GameManager::sharedState();
+
+    return UserIcons{
+        static_cast<uint16_t>(gm->activeIconForType(gm->m_playerIconType)),
+        gm->m_playerIconType,
+        static_cast<uint8_t>(gm->getPlayerColor()),
+        static_cast<uint8_t>(gm->getPlayerColor2()),
+        static_cast<uint8_t>(gm->getPlayerGlowColor()),
+        gm->m_playerGlow,
+    };
+};
+
+arc::Future<UserIcons> user::getUserIconsCo() {
+    co_return *co_await async::waitForMainThread<UserIcons>([]() {
+        return getUserIcons();
+    });
+};
+
 void SelfDirector::onClosePopup(UploadActionPopup*) {
     if (m_authTask.isPending()) {
         Notification::create("Task cancelled", NotificationIcon::Error)->show();

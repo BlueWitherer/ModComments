@@ -11,8 +11,10 @@ using namespace cw::mod_cmmts;
 
 namespace cw::mod_cmmts {
     namespace impl {
-        static constexpr uint8_t g_commentWait = 30;
-        static constexpr uint8_t g_refreshWait = 2;
+        static constexpr uint8_t commentWait = 30;
+        static constexpr uint8_t refreshWait = 2;
+
+        static constexpr uint8_t maxCommentChars = 128;
     };
 };
 
@@ -178,16 +180,13 @@ arc::Future<WebRes> CommentsPopup::getComments() {
     co_return webres::processResp(co_await req.get("/v1/comments/get"_api));
 };
 
-arc::Future<WebRes> CommentsPopup::sendComment() {
+arc::Future<WebRes> CommentsPopup::sendComment(std::string content) {
     CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
 
     matjson::Value body;
     body["mod"] = m_modID;
-    body["content"] = *co_await async::waitForMainThread<std::string>([self = WeakRef(this)]() {
-        if (auto s = self.lock()) return std::string{s->m_inputBox->getString()};
-        return std::string{};
-    });
-    body["icons"] = user::getUserIcons();
+    body["content"] = std::move(content);
+    body["icons"] = co_await user::getUserIconsCo();
 
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
@@ -203,7 +202,7 @@ void CommentsPopup::updatePageLabel() {
 void CommentsPopup::refreshComments(bool skipCooldown) {
     if (!skipCooldown) {
         auto elapsed = asp::Instant::now().durationSince(s_lastRefresh).seconds();
-        if (elapsed < impl::g_refreshWait) return;
+        if (elapsed < impl::refreshWait) return;
     };
 
     s_lastRefresh = asp::Instant::now();
@@ -444,9 +443,14 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
     m_inputBox = TextInput::create(m_commentMenu->getScaledContentWidth() - 2.5f, "Share your thoughts...", "chatFont.fnt");
     m_inputBox->setID("comment-text-input");
     m_inputBox->setScale(0.925f);
-    m_inputBox->setMaxCharCount(128);
+    m_inputBox->setMaxCharCount(impl::maxCommentChars);
     m_inputBox->setTextAlign(TextInputAlign::Left);
     m_inputBox->setCommonFilter(CommonFilter::Any);
+
+    createInputLimitLabel(impl::maxCommentChars);
+
+    setMildLimitWarning(64);
+    setModerateLimitWarning(96);
 
     m_commentMenu->addChild(m_inputBox);
 
@@ -592,8 +596,8 @@ void CommentsPopup::onSend(Button* sender) {
     m_inputBox->defocus();
 
     auto elapsed = asp::Instant::now().durationSince(s_lastComment).seconds();
-    if (elapsed < impl::g_commentWait) {
-        auto remaining = impl::g_commentWait - elapsed;
+    if (elapsed < impl::commentWait) {
+        auto remaining = impl::commentWait - elapsed;
 
         createQuickPopup(
             "Slow Down!",
@@ -605,7 +609,10 @@ void CommentsPopup::onSend(Button* sender) {
         return;
     };
 
-    if (str::trim(m_inputBox->getString()).empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
+    auto inputStr = str::trim(m_inputBox->getString());
+
+    if (inputStr.size() > impl::maxCommentChars) return Notification::create(fmt::format("Comment exceeds {} characters", impl::maxCommentChars), NotificationIcon::Warning)->show();
+    if (inputStr.empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
 
     sender->setEnabled(false);
     if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({65, 65, 65});
@@ -613,13 +620,13 @@ void CommentsPopup::onSend(Button* sender) {
     m_refreshBtn->setVisible(false);
 
     m_commentTask.spawn(
-        sendComment(),
+        sendComment(std::move(inputStr)),
         [this, sender](WebRes res) {
             if (res.isOk()) {
                 s_lastComment = asp::Instant::now();
 
                 m_page = 1;
-                m_inputBox->setString("", false);
+                m_inputBox->setString("", true);
                 refreshComments();
             } else if (res.isErr()) {
                 m_refreshBtn->setVisible(true);

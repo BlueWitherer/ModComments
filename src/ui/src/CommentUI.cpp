@@ -19,6 +19,8 @@ namespace cw::mod_cmmts {
     };
 
     namespace impl {
+        static constexpr uint8_t maxReportChars = 48;
+
         static bool isStaff() {
             auto userRes = SelfDirector::get()->getCurrentUser();
             if (userRes.isErr()) return false;
@@ -79,17 +81,22 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
 
     m_inputBox = TextInput::create(m_mainLayer->getScaledContentWidth() - 25.f, "Tell us about this commment...", "chatFont.fnt");
     m_inputBox->setID("description-input");
-    m_inputBox->setMaxCharCount(48);
+    m_inputBox->setMaxCharCount(impl::maxReportChars);
     m_inputBox->setCommonFilter(CommonFilter::Alphanumeric);
     m_inputBox->setContentHeight(m_inputBox->getScaledContentHeight() * 1.5f);
 
+    createInputLimitLabel(impl::maxReportChars);
+
+    setMildLimitWarning(34);
+    setModerateLimitWarning(42);
+
     m_mainLayer->addChildAtPosition(m_inputBox, Anchor::Center, {0.f, -27.5f});
 
-    auto warning = Label::createRich("<co>False reports</c> will most likely result in <cr>action taken on your own account</c>, please be mindful of your reports!", "chatFont.fnt");
+    auto warning = Label::createRich("<co>False reports</c> will most likely result in <cr>action taken on your own account</c>, please be mindful of the reports you send!", "chatFont.fnt");
     warning->setScale(0.5f);
     warning->setAnchorPoint({0.5, 1});
     warning->setAlignment(Label::Alignment::Center);
-    warning->setMaxWidth((m_mainLayer->getScaledContentWidth() - 37.5f) * 1.75f);
+    warning->setMaxWidth((m_mainLayer->getScaledContentWidth() - 32.5f) * 1.75f);
 
     m_mainLayer->addChildAtPosition(warning, Anchor::Center, {0.f, -57.5f});
 
@@ -100,10 +107,12 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
             geodeTheme ? "geode.loader/GE_button_05.png" : "GJ_button_01.png",
             0.875f),
         [this, &cmmt](Button* sender) {
-            auto input = str::trim(m_inputBox->getString());
-            if (input.empty()) return Notification::create("Reason cannot be empty.", NotificationIcon::Error)->show();
+            auto inputStr = str::trim(m_inputBox->getString());
 
-            m_callback(cmmt, std::move(input));
+            if (inputStr.size() > impl::maxReportChars) return Notification::create(fmt::format("Comment exceeds {} characters", impl::maxReportChars), NotificationIcon::Warning)->show();
+            if (inputStr.empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
+
+            m_callback(cmmt, std::move(inputStr));
         });
     sendBtn->setID("submit-idea-btn");
     sendBtn->setScale(0.75f);
@@ -262,6 +271,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
     m_contentLabel->setID("comment-content-label");
     m_contentLabel->setScale(0.5f);
     m_contentLabel->setAnchorPoint({0, 1});
+    m_contentLabel->setBreakWords(true);
 
     buttons
         ? m_contentLabel->setMaxWidth(getScaledContentWidth() * 1.375f)  // <- cuts off way too early for some reason

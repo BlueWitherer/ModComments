@@ -1,3 +1,7 @@
+# v1.0.4 
+- Add limit length labels for text boxes
+- Other tweaks
+
 # v1.0.3 
 - Fix a crash
 
