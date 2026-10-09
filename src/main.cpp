@@ -31,8 +31,8 @@ namespace cw::mod_cmmts {
             cue::resetNode(m_popup);
         };
 
-        arc::Future<WebRes> checkModIndex(std::string modID) {
-            co_return webres::processResp(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID)));
+        arc::Future<WebRes> checkModIndex(std::string modId) {
+            co_return webres::processResp(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modId)));
         };
     };
 
@@ -59,8 +59,8 @@ namespace cw::mod_cmmts {
                 cue::resetNode(m_popup);
             };
 
-            arc::Future<WebRes> checkModIndex(std::string modID) {
-                auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID));
+            arc::Future<WebRes> checkModIndex(std::string modId) {
+                auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modId));
                 co_return webres::processResp(res);
             };
         };

@@ -21,7 +21,7 @@ namespace cw::mod_cmmts {
 Result<CommentRequest> matjson::Serialize<CommentRequest>::fromJson(matjson::Value const& value) {
     CommentRequest out;
 
-    GEODE_UNWRAP_INTO(out.modID, value["mod"].asString());
+    GEODE_UNWRAP_INTO(out.modId, value["mod"].asString());
     GEODE_UNWRAP_INTO(out.content, value["content"].asString());
     GEODE_UNWRAP_INTO(out.icons, value["icons"].as<UserIcons>());
 
@@ -30,7 +30,7 @@ Result<CommentRequest> matjson::Serialize<CommentRequest>::fromJson(matjson::Val
 
 matjson::Value matjson::Serialize<CommentRequest>::toJson(CommentRequest const& value) {
     Value out;
-    out["mod"] = value.modID;
+    out["mod"] = value.modId;
     out["content"] = value.content;
     out["icons"] = value.icons;
 
@@ -143,11 +143,11 @@ asp::Instant CommentsPopup::s_lastRefresh;
 StringMap<GeodeMod> CommentsPopup::s_indexedMods;
 
 bool CommentsPopup::showInput() const {
-    return argon::signedIn() && Loader::get()->isModInstalled(m_modID);
+    return argon::signedIn() && Loader::get()->isModInstalled(m_modId);
 };
 
 arc::Future<WebRes> CommentsPopup::getGeodeData() {
-    co_return webres::processResp(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modID)));
+    co_return webres::processResp(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modId)));
 };
 
 arc::Future<WebRes> CommentsPopup::deleteComment(uint64_t id) {
@@ -174,7 +174,7 @@ arc::Future<WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason
 
 arc::Future<WebRes> CommentsPopup::getComments() {
     auto req = request::base()
-                   .param("mod", m_modID)
+                   .param("mod", m_modId)
                    .param("page", m_page);
 
     co_return webres::processResp(co_await req.get("/v1/comments/get"_api));
@@ -184,7 +184,7 @@ arc::Future<WebRes> CommentsPopup::sendComment(std::string content) {
     CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
 
     matjson::Value body;
-    body["mod"] = m_modID;
+    body["mod"] = m_modId;
     body["content"] = std::move(content);
     body["icons"] = co_await players::getUserIconsCo();
 
@@ -298,13 +298,13 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
         });
 };
 
-bool CommentsPopup::init(std::string modID, bool geodeTheme) {
-    m_modID = std::move(modID);
+bool CommentsPopup::init(std::string modId, bool geodeTheme) {
+    m_modId = std::move(modId);
     m_geodeTheme = geodeTheme;
 
     if (!Popup::init(430.f, 270.f, m_geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
 
-    setID(fmt::format("popup-{}", modID));
+    setID(fmt::format("popup-{}", modId));
 
     setCloseButtonSpr(
         CircleButtonSprite::createWithSpriteFrameName(
@@ -321,12 +321,12 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
         m_geodeLoading->setVisible(false);
     };
 
-    if (Loader::get()->isModInstalled(m_modID)) {
-        auto modNode = CommentModNode::create(m_modID);
+    if (Loader::get()->isModInstalled(m_modId)) {
+        auto modNode = CommentModNode::create(m_modId);
         addModNode(modNode);
     } else {
-        if (auto const it = s_indexedMods.find(m_modID); it != s_indexedMods.end()) {
-            auto modNode = CommentModNode::create(m_modID, it->second);
+        if (auto const it = s_indexedMods.find(m_modId); it != s_indexedMods.end()) {
+            auto modNode = CommentModNode::create(m_modId, it->second);
             addModNode(modNode);
         };
 
@@ -338,9 +338,9 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
                 auto dataRes = res.getPayload<GeodeMod>();
                 if (dataRes.isErr()) return log::error("Failed to serialize response: {}", dataRes.unwrapErr());
 
-                s_indexedMods[m_modID] = std::move(dataRes).unwrap();
+                s_indexedMods[m_modId] = std::move(dataRes).unwrap();
 
-                auto modNode = CommentModNode::create(m_modID, s_indexedMods[m_modID]);
+                auto modNode = CommentModNode::create(m_modId, s_indexedMods[m_modId]);
                 addModNode(modNode);
             });
     };
@@ -458,7 +458,7 @@ bool CommentsPopup::init(std::string modID, bool geodeTheme) {
 
     if (!isShowInput) {
         auto install = Label::createRich(
-            Loader::get()->isModInstalled(m_modID)
+            Loader::get()->isModInstalled(m_modId)
                 ? (argon::signedIn()
                           ? "<cr>Unknown error</c>"  // idk let me have fun with my ternaries >:C
                           : "<cy>Log in</c> to <cg>post comments</c>!")
@@ -627,6 +627,7 @@ void CommentsPopup::onSend(Button* sender) {
 
                 m_page = 1;
                 m_inputBox->setString("", true);
+
                 refreshComments();
             } else if (res.isErr()) {
                 m_refreshBtn->setVisible(true);
@@ -685,9 +686,9 @@ void CommentsPopup::onExit() {
     Popup::onExit();
 };
 
-CommentsPopup* CommentsPopup::create(std::string modID, bool geodeTheme) {
+CommentsPopup* CommentsPopup::create(std::string modId, bool geodeTheme) {
     auto ret = new CommentsPopup();
-    if (ret->init(std::move(modID), geodeTheme)) {
+    if (ret->init(std::move(modId), geodeTheme)) {
         ret->autorelease();
         return ret;
     };

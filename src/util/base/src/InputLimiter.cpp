@@ -1,4 +1,4 @@
-#include "../InputLimitLabelDelegate.hpp"
+#include "../InputLimiter.hpp"
 
 #include <Util.h>
 
@@ -9,12 +9,14 @@ using namespace cw::mod_cmmts;
 
 using namespace cw::mod_cmmts::base;
 
-std::string InputLimitLabelDelegate::getCharCountText(std::string_view input) const {
+std::string InputLimiter::getCharCountText(std::string_view input) const {
     return fmt::format("{} / {}", input.size(), m_inputMaxChars);
 };
 
-Label* InputLimitLabelDelegate::createInputLimitLabel(uint16_t limit) {
+Label* InputLimiter::createInputLimitLabel(uint8_t limit) {
     m_inputMaxChars = limit;
+
+    m_inputBox->setMaxCharCount(m_inputMaxChars);
 
     m_inputBoxCharLabel = Label::create(getCharCountText(m_inputBox->getString()), "chatFont.fnt");
     m_inputBoxCharLabel->setScale(0.5f);
@@ -42,10 +44,10 @@ Label* InputLimitLabelDelegate::createInputLimitLabel(uint16_t limit) {
     return m_inputBoxCharLabel;
 };
 
-void InputLimitLabelDelegate::setModerateLimitWarning(uint16_t threshold) {
+void InputLimiter::setModerateLimitWarning(uint8_t threshold) {
     m_inputModerateWarn = threshold;
 };
 
-void InputLimitLabelDelegate::setMildLimitWarning(uint16_t threshold) {
+void InputLimiter::setMildLimitWarning(uint8_t threshold) {
     m_inputMildWarn = threshold;
 };

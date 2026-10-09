@@ -15,7 +15,7 @@ namespace cw::mod_cmmts {
     };
 
     namespace ui {
-        class CommentReportPopup final : public geode::Popup, private base::InputLimitLabelDelegate {
+        class CommentReportPopup final : public geode::Popup, private base::InputLimiter {
             using Callback = geode::Function<void(Comment const&, std::string)>;
 
         private:

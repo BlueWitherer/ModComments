@@ -1,6 +1,6 @@
 #pragma once
 
-#include <util/base/InputLimitLabelDelegate.hpp>
+#include <util/base/InputLimiter.hpp>
 
 #include <util/Comments.hpp>
 #include <util/GeodeMod.hpp>
@@ -10,7 +10,7 @@
 
 namespace cw::mod_cmmts {
     struct CommentRequest final {
-        std::string modID;
+        std::string modId;
         std::string content;
         UserIcons icons;
     };
@@ -44,7 +44,7 @@ namespace cw::mod_cmmts {
             static CommentModNode* create(std::string id, std::optional<GeodeMod> mod = std::nullopt);
         };
 
-        class CommentsPopup final : public geode::Popup, private base::InputLimitLabelDelegate {
+        class CommentsPopup final : public geode::Popup, private base::InputLimiter {
             struct LinkButton final {
                 std::string id;
                 std::string sprite;
@@ -52,7 +52,7 @@ namespace cw::mod_cmmts {
             };
 
         private:
-            std::string m_modID;
+            std::string m_modId;
             bool m_geodeTheme = false;
 
             geode::LoadingSpinner* m_geodeLoading = nullptr;
@@ -104,10 +104,10 @@ namespace cw::mod_cmmts {
 
             void onExit() override;
 
-            bool init(std::string modID, bool geodeTheme);
+            bool init(std::string modId, bool geodeTheme);
 
         public:
-            static CommentsPopup* create(std::string modID, bool geodeTheme = true);
+            static CommentsPopup* create(std::string modId, bool geodeTheme = true);
         };
     };
 };

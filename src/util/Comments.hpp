@@ -30,7 +30,7 @@ namespace cw::mod_cmmts {
     struct Comment final {
         uint64_t id = 0;
         CommentUser author;
-        std::string modID;
+        std::string modId;
         std::string content;
         asp::SystemTime created;
         uint64_t likes = 0;

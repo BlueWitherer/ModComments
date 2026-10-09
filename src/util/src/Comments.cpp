@@ -80,7 +80,7 @@ Result<Comment> matjson::Serialize<Comment>::fromJson(matjson::Value const& valu
 
     GEODE_UNWRAP_INTO(out.id, value["id"].asUInt());
     GEODE_UNWRAP_INTO(out.author, value["author"].as<CommentUser>());
-    GEODE_UNWRAP_INTO(out.modID, value["mod"].asString());
+    GEODE_UNWRAP_INTO(out.modId, value["mod"].asString());
     GEODE_UNWRAP_INTO(out.content, value["content"].asString());
 
     GEODE_UNWRAP_INTO(auto uTime, value["created_at"].asInt());
@@ -98,7 +98,7 @@ matjson::Value matjson::Serialize<Comment>::toJson(Comment const& value) {
     Value out;
     out["id"] = value.id;
     out["author"] = value.author;
-    out["mod"] = value.modID;
+    out["mod"] = value.modId;
     out["content"] = value.content;
     out["created_at"] = value.created.timeSinceEpoch().seconds();
     out["likes"] = value.likes;
