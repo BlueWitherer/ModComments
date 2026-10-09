@@ -12,31 +12,31 @@ using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
 namespace cw::mod_cmmts {
+    struct CommentUserStatusData final {
+        std::string name;
+        std::string description;
+        std::string badgeSprite;
+    };
+
     namespace impl {
         static bool isStaff() {
             auto userRes = SelfDirector::get()->getCurrentUser();
             if (userRes.isErr()) return false;
 
             auto staff = userRes.unwrap().staff;
-            log::trace("user {} staff", staff ? "is" : "is not");
+            log::trace("Current user {} staff", staff ? "is" : "is NOT");
             return staff;
         };
 
-        struct CommentUserStatusData final {
-            std::string name;
-            std::string description;
-            std::string badgeSprite;
-        };
-
-        static CommentUserStatusData const& getDataForStatus(CommentUserStatus status) {
-            static auto owner = CommentUserStatusData{
+        static CommentUserStatusData const& getDataForStatus(CommentUserStatus status) noexcept {
+            static auto const owner = CommentUserStatusData{
                 "Mod Comments Owner",
                 "is the <cg>Mod Comments owner</c>. They own and actively develop this mod.",
                 "badge_owner.png"_spr,
             };
 
-            static auto staff = CommentUserStatusData{
-                "Mod Comment Staff",
+            static auto const staff = CommentUserStatusData{
+                "Mod Comments Staff",
                 "is a <cg>Comment moderator</c>. They oversee comment sections and review user reports to keep conversations safe for everyone.",
                 "badge_staff.png"_spr,
             };
