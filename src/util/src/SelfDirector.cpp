@@ -83,7 +83,7 @@ arc::Future<WebRes> SelfDirector::authorize() {
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
 
-    co_return webres::processResp(co_await req.post("/v1/me"_api));
+    co_return request::parse(co_await req.post("/v1/me"_api));
 };
 
 void SelfDirector::setCurrentUser(CommentUser user) {

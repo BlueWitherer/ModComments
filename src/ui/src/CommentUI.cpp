@@ -201,7 +201,7 @@ arc::Future<WebRes> CommentItem::sendVote(CommentVote vote) {
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
 
-    co_return webres::processResp(co_await req.put("/v1/comments/vote"_api));
+    co_return request::parse(co_await req.put("/v1/comments/vote"_api));
 };
 
 bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme) {

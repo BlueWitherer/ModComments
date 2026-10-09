@@ -1,5 +1,7 @@
 #pragma once
 
+#include <argon/argon.hpp>
+
 #include <Geode/Geode.hpp>
 
 namespace cw::mod_cmmts {
@@ -29,8 +31,13 @@ namespace cw::mod_cmmts {
         bool isErr() const noexcept;
     };
 
-    namespace webres {
-        WebRes processResp(geode::utils::web::WebResponse const& res);
+    namespace request {
+        WebRes parse(geode::utils::web::WebResponse const& res);
+
+        geode::utils::web::WebRequest base();
+
+        geode::utils::web::WebRequest withAuth(std::string token);
+        arc::Future<geode::utils::web::WebRequest> withAuthCo(std::string token);
     };
 };
 

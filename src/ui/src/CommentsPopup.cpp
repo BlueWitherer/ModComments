@@ -147,7 +147,7 @@ bool CommentsPopup::showInput() const {
 };
 
 arc::Future<WebRes> CommentsPopup::getGeodeData() {
-    co_return webres::processResp(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modId)));
+    co_return request::parse(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modId)));
 };
 
 arc::Future<WebRes> CommentsPopup::deleteComment(uint64_t id) {
@@ -156,7 +156,7 @@ arc::Future<WebRes> CommentsPopup::deleteComment(uint64_t id) {
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .param("comment", id);
 
-    co_return webres::processResp(co_await req.send("DELETE", "/v1/comments/delete"_api));
+    co_return request::parse(co_await req.send("DELETE", "/v1/comments/delete"_api));
 };
 
 arc::Future<WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason) {
@@ -169,7 +169,7 @@ arc::Future<WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
 
-    co_return webres::processResp(co_await req.post("/v1/reports/send"_api));
+    co_return request::parse(co_await req.post("/v1/reports/send"_api));
 };
 
 arc::Future<WebRes> CommentsPopup::getComments() {
@@ -177,7 +177,7 @@ arc::Future<WebRes> CommentsPopup::getComments() {
                    .param("mod", m_modId)
                    .param("page", m_page);
 
-    co_return webres::processResp(co_await req.get("/v1/comments/get"_api));
+    co_return request::parse(co_await req.get("/v1/comments/get"_api));
 };
 
 arc::Future<WebRes> CommentsPopup::sendComment(std::string content) {
@@ -191,7 +191,7 @@ arc::Future<WebRes> CommentsPopup::sendComment(std::string content) {
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
 
-    co_return webres::processResp(co_await req.post("/v1/comments/send"_api));
+    co_return request::parse(co_await req.post("/v1/comments/send"_api));
 };
 
 void CommentsPopup::updatePageLabel() {
