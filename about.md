@@ -17,6 +17,8 @@ On any Geode mod information pop-up, you'll find <cg>a tab for comments</c>. <cl
 
 You can only <cy>post comments</c> on <cg>mods you currently have installed on your client</c>, but you can always look at comments on *any mod* <cr>as long as it's publicly available on Geode</c>!
 
+![❗](frame:geode.loader/info-alert.png?scale=0.375) <cr>*Mod developers **are NOT responsible for responding to __bug reports or user support inquiries__ through comments**, please __instead contact them through their own official channels__.*</c>
+
 ---
 
 ![🗨️](frame:gj_discordIcon_001.png?scale=0.375) **If you need help, join my [support Discord server](https://www.dsc.gg/cheeseworks) and ask! :)**
