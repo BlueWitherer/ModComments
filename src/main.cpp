@@ -10,9 +10,80 @@ using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
 namespace cw::mod_cmmts {
+    class IndexTaskDelegate final : public cw::mod_cmmts::base::Singleton<IndexTaskDelegate>, public UploadPopupDelegate {
+    private:
+        Ref<UploadActionPopup> m_popup = nullptr;
+
+    public:
+        TaskHolder<WebRes> m_checkIndexTask;
+
+        Ref<UploadActionPopup> createProgressPopup() {
+            cue::resetNode(m_popup);
+
+            m_popup = UploadActionPopup::create(this, "Checking Geode index...");
+            m_popup->show();
+
+            return m_popup;
+        };
+
+        void onClosePopup(UploadActionPopup*) override {
+            m_checkIndexTask.cancel();
+            cue::resetNode(m_popup);
+        };
+
+        arc::Future<WebRes> checkModIndex(std::string modID) {
+            co_return webres::processResp(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID)));
+        };
+    };
+
     namespace main {
         static constexpr std::string_view g_urlGeode = "https://geode-sdk.org/mods/";
         static StringSet validMods;
+
+        class IndexTaskDelegate final : public cw::mod_cmmts::base::Singleton<IndexTaskDelegate>, public UploadPopupDelegate {
+        public:
+            TaskHolder<WebRes> m_checkIndexTask;
+            Ref<UploadActionPopup> m_popup = nullptr;
+
+            Ref<UploadActionPopup> createProgressPopup() {
+                cue::resetNode(m_popup);
+
+                m_popup = UploadActionPopup::create(this, "Checking Geode index...");
+                m_popup->show();
+
+                return m_popup;
+            };
+
+            void onClosePopup(UploadActionPopup*) override {
+                m_checkIndexTask.cancel();
+                cue::resetNode(m_popup);
+            };
+
+            arc::Future<WebRes> checkModIndex(std::string modID) {
+                auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID));
+                co_return webres::processResp(res);
+            };
+        };
+
+        static bool mustAgreeToRules(std::string_view id) {
+            return argon::signedIn() && Loader::get()->isModInstalled(id) && !Mod::get()->getSavedValue("agreed-rules", false);
+        };
+
+        static void createPopup(std::string id, bool geodeTheme) {
+            if (!mustAgreeToRules(id)) return CommentsPopup::create(std::move(id), geodeTheme)->show();
+
+            RulesPopup::create(
+                [id = std::move(id), geodeTheme](RulesPopup* sender, bool agreed) {
+                    sender->removeFromParent();
+
+                    if (!agreed) return;
+
+                    Mod::get()->setSavedValue("agreed-rules", true);
+                    CommentsPopup::create(id, geodeTheme)->show();
+                },
+                geodeTheme)
+                ->show();
+        };
     };
 };
 
@@ -41,55 +112,10 @@ $on_game(Loaded) {
         .leak();
 };
 
-class IndexTaskDelegate final : public cw::mod_cmmts::base::Singleton<IndexTaskDelegate>, public UploadPopupDelegate {
-public:
-    TaskHolder<WebRes> m_checkIndexTask;
-    Ref<UploadActionPopup> m_popup = nullptr;
-
-    Ref<UploadActionPopup>& createProgressPopup() {
-        cue::resetNode(m_popup);
-
-        m_popup = UploadActionPopup::create(this, "Checking Geode index...");
-        m_popup->show();
-
-        return m_popup;
-    };
-
-    void onClosePopup(UploadActionPopup*) override {
-        m_checkIndexTask.cancel();
-        cue::resetNode(m_popup);
-    };
-
-    arc::Future<WebRes> checkModIndex(std::string modID) {
-        auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modID));
-        co_return webres::processResp(res);
-    };
-};
-
 class $nodeModify(CommentsModPopup, ModPopup) {
     struct Fields final {
         std::string id;
         bool geodeTheme = false;
-
-        void createPopup() {
-            if (!mustAgreeToRules()) return CommentsPopup::create(id, geodeTheme)->show();
-
-            RulesPopup::create(
-                [this](RulesPopup* sender, bool agreed) {
-                    sender->removeFromParent();
-
-                    if (!agreed) return;
-
-                    Mod::get()->setSavedValue("agreed-rules", true);
-                    CommentsPopup::create(id, geodeTheme)->show();
-                },
-                geodeTheme)
-                ->show();
-        };
-
-        bool mustAgreeToRules() const {
-            return argon::signedIn() && Loader::get()->isModInstalled(id) && !Mod::get()->getSavedValue("agreed-rules", false);
-        };
     };
 
     void modify() {
@@ -98,6 +124,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
         f->geodeTheme = Loader::get()->getLoadedMod(CW_GEODE_ID)->getSettingValue<std::string>("used-theme") != "Geometry Dash";
 
         if (auto res = getThisID(); res.isOk()) f->id = std::move(res).unwrap();
+        if (f->id.empty()) return;
 
         if (auto self = reinterpret_cast<FLAlertLayer*>(this)) {
             if (auto displayNode = self->m_mainLayer->getChildByType<CCNode*>(2)) {
@@ -112,14 +139,15 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                     auto tab = CCMenuItemExt::createSpriteExtra(
                         tabSprite,
                         [f](auto) {
-                            if (auto const it = main::validMods.find(f->id); it != main::validMods.end()) return f->createPopup();
+                            if (auto const it = main::validMods.find(f->id); it != main::validMods.end()) return main::createPopup(f->id, f->geodeTheme);
 
                             auto delegate = IndexTaskDelegate::get();
-                            auto& popup = delegate->createProgressPopup();
+
+                            auto popup = delegate->createProgressPopup();
 
                             delegate->m_checkIndexTask.spawn(
                                 delegate->checkModIndex(f->id),
-                                [f, &popup](WebRes res) {
+                                [id = f->id, geodeTheme = f->geodeTheme, popup](WebRes res) {
                                     if (res.isOk()) {
                                         auto metaRes = res.getPayload<GeodeMod>();
                                         if (metaRes.isErr()) {
@@ -136,9 +164,9 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                                         };
 
                                         popup->removeFromParent();
-                                        main::validMods.insert(f->id);
+                                        main::validMods.insert(id);
 
-                                        f->createPopup();
+                                        main::createPopup(std::move(id), geodeTheme);
 
                                         return;
                                     };

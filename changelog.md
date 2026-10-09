@@ -1,3 +1,6 @@
+# v1.0.3 
+- Fix a crash
+
 # v1.0.2 
 - Bug fixes & tweaks
 
