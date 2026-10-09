@@ -66,7 +66,7 @@ namespace cw::mod_cmmts {
         };
 
         static bool mustAgreeToRules(std::string_view id) {
-            return argon::signedIn() && Loader::get()->isModInstalled(id) && !Mod::get()->getSavedValue("agreed-rules", false);
+            return argon::signedIn() && Loader::get()->isModInstalled(id) && !Mod::get()->getSavedValue(rules::saved, false);
         };
 
         static void createPopup(std::string id, bool geodeTheme) {
@@ -78,7 +78,7 @@ namespace cw::mod_cmmts {
 
                     if (!agreed) return;
 
-                    Mod::get()->setSavedValue("agreed-rules", true);
+                    Mod::get()->setSavedValue(rules::saved, true);
                     CommentsPopup::create(id, geodeTheme)->show();
                 },
                 geodeTheme)

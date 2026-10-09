@@ -23,6 +23,8 @@ namespace cw::mod_cmmts {
     };
 
     namespace rules {
+        static constexpr auto saved = "agreed-rules";
+
         static constexpr auto fullText =
             "**Upon posting comments, you agree to adhere to the following <cr>rules</c>.**\n\n"
             "---\n\n"
