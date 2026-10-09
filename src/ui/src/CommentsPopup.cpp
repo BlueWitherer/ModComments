@@ -186,7 +186,7 @@ arc::Future<WebRes> CommentsPopup::sendComment(std::string content) {
     matjson::Value body;
     body["mod"] = m_modID;
     body["content"] = std::move(content);
-    body["icons"] = co_await user::getUserIconsCo();
+    body["icons"] = co_await players::getUserIconsCo();
 
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);

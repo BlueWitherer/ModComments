@@ -7,7 +7,7 @@
 using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
-UserIcons user::getUserIcons() {
+UserIcons players::getUserIcons() {
     auto gm = GameManager::sharedState();
 
     return UserIcons{
@@ -20,7 +20,7 @@ UserIcons user::getUserIcons() {
     };
 };
 
-arc::Future<UserIcons> user::getUserIconsCo() {
+arc::Future<UserIcons> players::getUserIconsCo() {
     co_return *co_await async::waitForMainThread<UserIcons>([]() {
         return getUserIcons();
     });
@@ -78,7 +78,7 @@ arc::Future<WebRes> SelfDirector::authorize() {
     CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
 
     matjson::Value body;
-    body = user::getUserIcons();
+    body = players::getUserIcons();
 
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);

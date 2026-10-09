@@ -35,7 +35,7 @@ namespace cw::mod_cmmts {
         bool isReported(uint64_t id) const noexcept;
     };
 
-    namespace user {
+    namespace players {
         UserIcons getUserIcons();
         arc::Future<UserIcons> getUserIconsCo();
     };
