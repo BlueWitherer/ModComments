@@ -82,7 +82,6 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
     m_inputBox = TextInput::create(m_mainLayer->getScaledContentWidth() - 25.f, "Tell us about this commment...", "chatFont.fnt");
     m_inputBox->setID("description-input");
     m_inputBox->setMaxCharCount(impl::maxReportChars);
-    m_inputBox->setCommonFilter(CommonFilter::Alphanumeric);
     m_inputBox->setContentHeight(m_inputBox->getScaledContentHeight() * 1.5f);
 
     createInputLimitLabel(impl::maxReportChars);
