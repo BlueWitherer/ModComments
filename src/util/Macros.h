@@ -1,7 +1,11 @@
 #pragma once
 
-#ifdef CW_TESTING
-#define CW_WEB_BASEURL "http://localhost:6969"
-#else
+#include <rhatt/Macros.h>
+
+#ifndef CW_TESTING
+#ifdef CW_WEB_BASEURL
+#undef CW_WEB_BASEURL
+#endif
+
 #define CW_WEB_BASEURL "https://modcomments.cheeseworks.gay"
 #endif
