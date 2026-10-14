@@ -4,7 +4,8 @@
 
 #include <util/Comments.hpp>
 #include <util/GeodeMod.hpp>
-#include <util/WebRes.hpp>
+
+#include <rhatt/util/WebRes.hpp>
 
 #include <Geode/Geode.hpp>
 

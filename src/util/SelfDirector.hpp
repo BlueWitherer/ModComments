@@ -1,10 +1,10 @@
 #pragma once
 
-#include "base/Singleton.hpp"
-
-#include "WebRes.hpp"
-
 #include "Comments.hpp"
+
+#include <rhatt/base/Singleton.hpp>
+
+#include <rhatt/util/WebRes.hpp>
 
 namespace cw::mod_cmmts {
     class SelfDirector final : public base::Singleton<SelfDirector>, public UploadPopupDelegate {

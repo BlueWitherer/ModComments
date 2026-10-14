@@ -2,6 +2,8 @@
 
 #include <Util.h>
 
+#include <rhatt/prelude.h>
+
 #include <cue/PlayerIcon.hpp>
 
 #include <Geode/Geode.hpp>
@@ -190,8 +192,8 @@ void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, Comm
     to->updateLayout();
 };
 
-arc::Future<WebRes> CommentItem::sendVote(CommentVote vote) {
-    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+arc::Future<cw::WebRes> CommentItem::sendVote(CommentVote vote) {
+    CW_ARGON_UNWRAP(auto token);
 
     matjson::Value body;
     body["comment"] = m_comment.id;
@@ -346,7 +348,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
 
     addChildAtPosition(time, Anchor::BottomRight, {-5.f, 5.f});
 
-    if (m_comment.author.id == CW_MODCOMMENTS_OWNER) {
+    if (m_comment.author.id == CW_OWNER) {
         addBadge(CommentUserStatus::Owner);
     } else if (m_comment.author.staff) {
         addBadge(CommentUserStatus::Staff);
@@ -401,7 +403,7 @@ void CommentItem::voteCallback(CommentVote type) {
 
     m_voteTask.spawn(
         sendVote(type),
-        [this, prevLikes, prevDislikes, prevVote, like](WebRes res) {
+        [this, prevLikes, prevDislikes, prevVote, like](cw::WebRes res) {
             auto const completed = [this]() {
                 m_likeLabel->setText(numToAbbreviatedString(m_comment.likes));
                 m_dislikeLabel->setText(numToAbbreviatedString(m_comment.dislikes));

@@ -1,6 +1,8 @@
 #include <Util.h>
 
-#include <util/base/Singleton.hpp>
+#include <rhatt/prelude.h>
+
+#include <rhatt/base/Singleton.hpp>
 
 #include <Geode/Geode.hpp>
 
@@ -10,7 +12,7 @@ using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
 namespace cw::mod_cmmts {
-    class IndexTaskDelegate final : public cw::mod_cmmts::base::Singleton<IndexTaskDelegate>, public UploadPopupDelegate {
+    class IndexTaskDelegate final : public cw::base::Singleton<IndexTaskDelegate>, public UploadPopupDelegate {
     private:
         Ref<UploadActionPopup> m_popup = nullptr;
 
@@ -40,9 +42,9 @@ namespace cw::mod_cmmts {
         static constexpr std::string_view g_urlGeode = "https://geode-sdk.org/mods/";
         static StringSet validMods;
 
-        class IndexTaskDelegate final : public cw::mod_cmmts::base::Singleton<IndexTaskDelegate>, public UploadPopupDelegate {
+        class IndexTaskDelegate final : public cw::base::Singleton<IndexTaskDelegate>, public UploadPopupDelegate {
         public:
-            TaskHolder<WebRes> m_checkIndexTask;
+            TaskHolder<cw::WebRes> m_checkIndexTask;
             Ref<UploadActionPopup> m_popup = nullptr;
 
             Ref<UploadActionPopup> createProgressPopup() {
@@ -59,7 +61,7 @@ namespace cw::mod_cmmts {
                 cue::resetNode(m_popup);
             };
 
-            arc::Future<WebRes> checkModIndex(std::string modId) {
+            arc::Future<cw::WebRes> checkModIndex(std::string modId) {
                 auto res = co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", modId));
                 co_return request::parse(res);
             };
@@ -88,13 +90,13 @@ namespace cw::mod_cmmts {
 };
 
 $on_game(Loaded) {
-    log::debug("Using web API url: {}", url::apiBase);
+    log::debug("Using web API url: {}", cw::url::apiBase);
 
     auto sd = SelfDirector::get();
 
     async::spawn(
         sd->authorize(),
-        [sd](WebRes res) {
+        [sd](cw::WebRes res) {
             if (res.isErr()) return log::error("{}: {}", res.getCode(), res.getError());
 
             auto userRes = res.getPayload<CommentUser>();
@@ -147,7 +149,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
 
                             delegate->m_checkIndexTask.spawn(
                                 delegate->checkModIndex(f->id),
-                                [id = f->id, geodeTheme = f->geodeTheme, popup](WebRes res) {
+                                [id = f->id, geodeTheme = f->geodeTheme, popup](cw::WebRes res) {
                                     if (res.isOk()) {
                                         auto metaRes = res.getPayload<GeodeMod>();
                                         if (metaRes.isErr()) {

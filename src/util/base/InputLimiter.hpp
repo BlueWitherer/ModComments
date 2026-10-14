@@ -2,7 +2,7 @@
 
 #include <Geode/UI.hpp>
 
-namespace cw::mod_cmmts {
+namespace cw {
     namespace base {
         class InputLimiter {  // idk :P
         private:

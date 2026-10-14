@@ -10,6 +10,8 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(ModComments VERSION 1.1.0)
 
+set(CW_ENABLE_WEB ON CACHE BOOL "" FORCE)
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
@@ -25,11 +27,6 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 setup_geode_mod(${PROJECT_NAME})
 
-option(CW_TESTING "Enable local testing mode" ON)
-if(CW_TESTING)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE CW_TESTING=1)
-endif()
-
 CPMAddPackage("gh:dankmeme01/cue#main")
-CPMAddPackage("gh:GlobedGD/argon@1.5.1")
-target_link_libraries(${PROJECT_NAME} cue argon)
+CPMAddPackage("gh:BlueWitherer/rhatts-geode-sillies#main")
+target_link_libraries(${PROJECT_NAME} cue rhatt)

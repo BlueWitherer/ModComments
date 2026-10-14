@@ -2,6 +2,8 @@
 
 #include <Util.h>
 
+#include <rhatt/prelude.h>
+
 #include <cue/PlayerIcon.hpp>
 
 #include <Geode/Geode.hpp>

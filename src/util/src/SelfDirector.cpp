@@ -2,6 +2,8 @@
 
 #include <Util.h>
 
+#include <rhatt/prelude.h>
+
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
@@ -72,10 +74,10 @@ void SelfDirector::startAuth() {
         });
 };
 
-arc::Future<WebRes> SelfDirector::authorize() {
+arc::Future<cw::WebRes> SelfDirector::authorize() {
     log::warn("Authorizing user...");
 
-    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+    CW_ARGON_UNWRAP(auto token);
 
     matjson::Value body;
     body = players::getUserIcons();

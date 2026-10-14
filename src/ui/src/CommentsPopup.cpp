@@ -2,6 +2,8 @@
 
 #include <Util.h>
 
+#include <rhatt/prelude.h>
+
 #include <cue/PlayerIcon.hpp>
 
 #include <Geode/Geode.hpp>
@@ -146,12 +148,12 @@ bool CommentsPopup::showInput() const {
     return argon::signedIn() && Loader::get()->isModInstalled(m_modId);
 };
 
-arc::Future<WebRes> CommentsPopup::getGeodeData() {
+arc::Future<cw::WebRes> CommentsPopup::getGeodeData() {
     co_return request::parse(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modId)));
 };
 
-arc::Future<WebRes> CommentsPopup::deleteComment(uint64_t id) {
-    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+arc::Future<cw::WebRes> CommentsPopup::deleteComment(uint64_t id) {
+    CW_ARGON_UNWRAP(auto token);
 
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .param("comment", id);
@@ -159,8 +161,8 @@ arc::Future<WebRes> CommentsPopup::deleteComment(uint64_t id) {
     co_return request::parse(co_await req.send("DELETE", "/v1/comments/delete"_api));
 };
 
-arc::Future<WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason) {
-    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+arc::Future<cw::WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason) {
+    CW_ARGON_UNWRAP(auto token);
 
     matjson::Value body;
     body["comment"] = id;
@@ -172,7 +174,7 @@ arc::Future<WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason
     co_return request::parse(co_await req.post("/v1/reports/send"_api));
 };
 
-arc::Future<WebRes> CommentsPopup::getComments() {
+arc::Future<cw::WebRes> CommentsPopup::getComments() {
     auto req = request::base()
                    .param("mod", m_modId)
                    .param("page", m_page);
@@ -180,8 +182,8 @@ arc::Future<WebRes> CommentsPopup::getComments() {
     co_return request::parse(co_await req.get("/v1/comments/get"_api));
 };
 
-arc::Future<WebRes> CommentsPopup::sendComment(std::string content) {
-    CW_MODCOMMENTS_ARGON_UNWRAP(auto token);
+arc::Future<cw::WebRes> CommentsPopup::sendComment(std::string content) {
+    CW_ARGON_UNWRAP(auto token);
 
     matjson::Value body;
     body["mod"] = m_modId;
@@ -196,7 +198,7 @@ arc::Future<WebRes> CommentsPopup::sendComment(std::string content) {
 
 void CommentsPopup::updatePageLabel() {
     auto count = m_commentList->m_contentLayer->getChildrenCount();
-    m_pageLabel->setText(fmt::format("Page {}, {} {}", m_page, count, plurals::appendS("comment", count)));
+    m_pageLabel->setText(fmt::format("Page {}, {} {}", m_page, count, str::plurals::appendS("comment", count)));
 };
 
 void CommentsPopup::refreshComments(bool skipCooldown) {
@@ -223,7 +225,7 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
 
     m_commentTask.spawn(
         getComments(),
-        [this](WebRes res) {
+        [this](cw::WebRes res) {
             if (res.isOk()) {
                 auto const fallback = [code = res.getCode()](std::string_view err) {
                     Notification::create(fmt::format("Comments failed to load ({})", code), NotificationIcon::Error);
@@ -332,7 +334,7 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
 
         m_geodeTask.spawn(
             getGeodeData(),
-            [this, addModNode = std::move(addModNode)](WebRes res) {
+            [this, addModNode = std::move(addModNode)](cw::WebRes res) {
                 if (res.isErr()) return log::error("{}: {}", res.getCode(), res.getError());
 
                 auto dataRes = res.getPayload<GeodeMod>();
@@ -601,7 +603,7 @@ void CommentsPopup::onSend(Button* sender) {
 
         createQuickPopup(
             "Slow Down!",
-            fmt::format("You must <co>wait {} {} before sending your next comment</c>!", remaining, plurals::appendS("second", remaining)),
+            fmt::format("You must <co>wait {} {} before sending your next comment</c>!", remaining, str::plurals::appendS("second", remaining)),
             "OK",
             nullptr,
             nullptr);
@@ -621,7 +623,7 @@ void CommentsPopup::onSend(Button* sender) {
 
     m_commentTask.spawn(
         sendComment(std::move(inputStr)),
-        [this, sender](WebRes res) {
+        [this, sender](cw::WebRes res) {
             if (res.isOk()) {
                 s_lastComment = asp::Instant::now();
 
@@ -650,7 +652,7 @@ void CommentsPopup::onDelete(Comment const& cmmt) {
         [this, &cmmt](auto, bool ok) {
             if (ok) m_commentActionTask.spawn(
                 deleteComment(cmmt.id),
-                [this](WebRes res) {
+                [this](cw::WebRes res) {
                     if (res.isOk()) return refreshComments(true);
                     Notification::create(fmt::format("Failed to delete comment ({})", res.getCode()), NotificationIcon::Error)->show();
                 });
@@ -670,7 +672,7 @@ void CommentsPopup::onReport(Comment const& cmmt) {
 
             m_commentActionTask.spawn(
                 reportComment(cmmt.id, std::move(reason)),
-                [&cmmt](WebRes res) {
+                [&cmmt](cw::WebRes res) {
                     if (res.isErr()) return Notification::create(fmt::format("Failed to report comment ({})", res.getCode()), NotificationIcon::Error)->show();
 
                     SelfDirector::get()->setReport(cmmt.id);

@@ -2,12 +2,14 @@
 
 #include <Util.h>
 
+#include <rhatt/prelude.h>
+
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
 using namespace cw::mod_cmmts;
 
-using namespace cw::mod_cmmts::base;
+using namespace cw::base;
 
 std::string InputLimiter::getCharCountText(std::string_view input) const {
     return fmt::format("{} / {}", input.size(), m_inputMaxChars);
