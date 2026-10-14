@@ -4,7 +4,7 @@
 
 #include <rhatt/base/Singleton.hpp>
 
-#include <rhatt/util/WebRes.hpp>
+#include <util/Macros.h>
 
 namespace cw::mod_cmmts {
     class SelfDirector final : public base::Singleton<SelfDirector>, public UploadPopupDelegate {

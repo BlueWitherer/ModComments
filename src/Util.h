@@ -1,5 +1,9 @@
 #pragma once
 
+#include <util/Macros.h>
+
+#include <rhatt/prelude.h>
+
 #include <cue/Util.hpp>
 
 #include <argon/argon.hpp>
@@ -8,7 +12,6 @@
 
 #include <ui/Include.h>
 
-#include <util/Macros.h>
 #include <util/Include.h>
 
 namespace cw::mod_cmmts {

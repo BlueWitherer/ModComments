@@ -1,7 +1,5 @@
 #include <Util.h>
 
-#include <rhatt/prelude.h>
-
 #include <rhatt/base/Singleton.hpp>
 
 #include <Geode/Geode.hpp>
@@ -91,6 +89,9 @@ namespace cw::mod_cmmts {
 
 $on_game(Loaded) {
     log::debug("Using web API url: {}", cw::url::apiBase);
+#ifdef CW_TESTING
+    log::warn("{} is in test mode!", Mod::get()->getID());
+#endif
 
     auto sd = SelfDirector::get();
 

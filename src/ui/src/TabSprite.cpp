@@ -2,8 +2,6 @@
 
 #include <Util.h>
 
-#include <rhatt/prelude.h>
-
 #include <Geode/Geode.hpp>
 
 #include <Geode/utils/ColorProvider.hpp>
