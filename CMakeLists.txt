@@ -29,4 +29,4 @@ setup_geode_mod(${PROJECT_NAME})
 
 CPMAddPackage("gh:dankmeme01/cue#main")
 CPMAddPackage("gh:BlueWitherer/rhatts-geode-sillies#main")
-target_link_libraries(${PROJECT_NAME} cue rhatt)
+target_link_libraries(${PROJECT_NAME} cue argon rhatt)

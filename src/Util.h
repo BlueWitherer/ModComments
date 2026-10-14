@@ -8,11 +8,11 @@
 
 #include <argon/argon.hpp>
 
-#include <Geode/Geode.hpp>
-
 #include <ui/Include.h>
 
 #include <util/Include.h>
+
+#include <Geode/Geode.hpp>
 
 namespace cw::mod_cmmts {
     namespace popups {
