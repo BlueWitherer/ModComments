@@ -1,8 +1,8 @@
 #pragma once
 
-#include <util/base/InputLimiter.hpp>
-
 #include <util/Macros.h>
+
+#include <util/base/InputLimiter.hpp>
 
 #include <util/Comments.hpp>
 #include <util/GeodeMod.hpp>

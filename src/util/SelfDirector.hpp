@@ -2,9 +2,9 @@
 
 #include "Comments.hpp"
 
-#include <rhatt/base/Singleton.hpp>
+#include "Macros.h"
 
-#include <util/Macros.h>
+#include <rhatt/base/Singleton.hpp>
 
 namespace cw::mod_cmmts {
     class SelfDirector final : public base::Singleton<SelfDirector>, public UploadPopupDelegate {

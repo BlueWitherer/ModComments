@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ui/CommentsPopup.hpp>
-
 #include <util/Macros.h>
+
+#include <ui/CommentsPopup.hpp>
 
 #include <util/Comments.hpp>
 #include <util/GeodeMod.hpp>
