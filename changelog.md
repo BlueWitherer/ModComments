@@ -1,4 +1,5 @@
 # v1.1.0 
+- Added highlight to comments @mentioning you
 - Improved staff tools
 - Bug fixes
 

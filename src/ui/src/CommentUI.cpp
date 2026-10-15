@@ -71,7 +71,7 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
     auto cmmtNode = CommentItem::create(cmmt, m_mainLayer->getScaledContentWidth() * 0.925f, false, geodeTheme);
     m_mainLayer->addChildAtPosition(cmmtNode, Anchor::Center, {0.f, -12.5f});
 
-    auto label = Label::createRich("If you believe this user's comment <cr>breaks our rules</c>, <cy>describe why using the text box below</c>. Thank you!", "chatFont.fnt");
+    auto label = Label::createRich("If you believe this user's comment <cr>breaks our rules</c>, <cy>describe why using the text box below</c>. Thank you!", cw::ui::font::chat);
     label->setScale(0.675f);
     label->setAnchorPoint({0.5, 1});
     label->setAlignment(Label::Alignment::Center);
@@ -79,7 +79,7 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
 
     m_mainLayer->addChildAtPosition(label, Anchor::Top, {0.f, -32.5f});
 
-    m_inputBox = TextInput::create(m_mainLayer->getScaledContentWidth() - 25.f, "Tell us about this commment...", "chatFont.fnt");
+    m_inputBox = TextInput::create(m_mainLayer->getScaledContentWidth() - 25.f, "Tell us about this commment...", cw::ui::font::chat);
     m_inputBox->setID("description-input");
     m_inputBox->setMaxCharCount(impl::maxReportChars);
     m_inputBox->setContentHeight(m_inputBox->getScaledContentHeight() * 1.5f);
@@ -91,7 +91,7 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
 
     m_mainLayer->addChildAtPosition(m_inputBox, Anchor::Center, {0.f, -27.5f});
 
-    auto warning = Label::createRich("<co>False reports</c> will most likely result in <cr>action taken on your own account</c>, please be mindful of the reports you send!", "chatFont.fnt");
+    auto warning = Label::createRich("<co>False reports</c> will most likely result in <cr>action taken on your own account</c>, please be mindful of the reports you send!", cw::ui::font::chat);
     warning->setScale(0.5f);
     warning->setAnchorPoint({0.5, 1});
     warning->setAlignment(Label::Alignment::Center);
@@ -102,7 +102,7 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
     auto sendBtn = Button::createWithNode(
         ButtonSprite::create(
             "Submit",
-            "goldFont.fnt",
+            cw::ui::font::gold,
             geodeTheme ? "geode.loader/GE_button_05.png" : "GJ_button_01.png",
             0.875f),
         [this, &cmmt](Button* sender) {
@@ -163,13 +163,12 @@ void CommentItem::addBadge(CommentUserStatus type) {
     cue::rescaleToMatch(btn, 12.5f);
 
     m_userMenu->addChild(btn);
-    m_userMenu->updateLayout();
 };
 
 void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, CommentVote type) {
     auto like = type == CommentVote::Like;
 
-    label = Label::create(fmt::format("{}", like ? m_comment.likes : m_comment.dislikes), "bigFont.fnt");
+    label = Label::create(fmt::format("{}", like ? m_comment.likes : m_comment.dislikes), cw::ui::font::big);
     label->setScale(0.375f);
 
     to->addChild(label);
@@ -255,7 +254,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
 
     auto username = Button::createWithLabel(
         user.username,
-        "goldFont.fnt",
+        cw::ui::font::gold,
         [id = user.id, self = isSelf()](auto) {
             ProfilePage::create(id, self)->show();
         });
@@ -264,9 +263,27 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
 
     m_userMenu->addChild(username);
 
+    if (m_comment.author.id == CW_OWNER) {
+        addBadge(CommentUserStatus::Owner);
+    } else if (m_comment.author.staff) {
+        addBadge(CommentUserStatus::Staff);
+    };
+
+    if (argon::signedIn() && !isSelf() && cw::str::contains(m_comment.content, fmt::format("@{}", GJAccountManager::get()->m_username))) {
+        auto mentionLabel = Label::create("mentioned you", cw::ui::font::geode::bold);
+        mentionLabel->setID("mention-label");
+        mentionLabel->setScale(0.425f);
+        mentionLabel->setAlignment(Label::Alignment::Left);
+        mentionLabel->setOpacity(200);
+
+        m_userMenu->addChild(mentionLabel);
+
+        bg->setColor({100, 200, 255});
+    };
+
     m_userMenu->updateLayout();
 
-    m_contentLabel = Label::create(m_comment.content, "geode.loader/mdFont.fnt");
+    m_contentLabel = Label::create(m_comment.content, cw::ui::font::geode::regular);
     m_contentLabel->setID("comment-content-label");
     m_contentLabel->setScale(0.5f);
     m_contentLabel->setAnchorPoint({0, 1});
@@ -346,7 +363,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
     auto const timePosted = *asp::SystemTime::now().durationSince(m_comment.created);
     std::string timeTxt = (timePosted.seconds() < 3) ? "Just now" : fmt::format("{} ago", timePosted.toHumanString());
 
-    auto time = Label::create(std::move(timeTxt), "chatFont.fnt");
+    auto time = Label::create(std::move(timeTxt), cw::ui::font::chat);
     time->setID("date-created-label");
     time->setScale(0.5f);
     time->setAnchorPoint({1, 0});
@@ -355,12 +372,6 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
     time->setOpacity(200);
 
     addChildAtPosition(time, Anchor::BottomRight, {-5.f, 5.f});
-
-    if (m_comment.author.id == CW_OWNER) {
-        addBadge(CommentUserStatus::Owner);
-    } else if (m_comment.author.staff) {
-        addBadge(CommentUserStatus::Staff);
-    };
 
     return true;
 };

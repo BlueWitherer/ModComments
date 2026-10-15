@@ -43,7 +43,7 @@ bool TabSprite::init(ZStringView iconFrame, std::string text, float width, bool 
 
     addChildAtPosition(m_icon, Anchor::Left, {16.f, 0.f}, false);
 
-    m_label = Label::create(std::move(text), "bigFont.fnt");
+    m_label = Label::create(std::move(text), cw::ui::font::big);
     m_label->setLimitLabelWidth(getScaledContentWidth() - 45.f);
 
     addChildAtPosition(m_label, Anchor::Left, {(itemSize.width - iconSize.width) / 2.f + iconSize.width, 0.f}, false);

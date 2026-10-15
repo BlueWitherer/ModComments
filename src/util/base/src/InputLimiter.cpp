@@ -18,7 +18,7 @@ Label* InputLimiter::createInputLimitLabel(uint8_t limit) {
 
     m_inputBox->setMaxCharCount(m_inputMaxChars);
 
-    m_inputBoxCharLabel = Label::create(getCharCountText(m_inputBox->getString()), "chatFont.fnt");
+    m_inputBoxCharLabel = Label::create(getCharCountText(m_inputBox->getString()), cw::ui::font::chat);
     m_inputBoxCharLabel->setScale(0.5f);
     m_inputBoxCharLabel->setOpacity(125);
     m_inputBoxCharLabel->setAnchorPoint({1, 0});

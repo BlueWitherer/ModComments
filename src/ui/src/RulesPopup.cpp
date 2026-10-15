@@ -26,7 +26,7 @@ bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
 
     addSideArt(m_mainLayer, SideArt::All, SideArtStyle::PopupGold);
 
-    auto label = Label::createRich("Before using <cg>Mod Comments</c>, you must agree to the <cr>rules</c>.", "chatFont.fnt");
+    auto label = Label::createRich("Before using <cg>Mod Comments</c>, you must agree to the <cr>rules</c>.", cw::ui::font::chat);
     label->setScale(0.675f);
     label->setAnchorPoint({0.5, 1});
     label->setAlignment(Label::Alignment::Center);
@@ -43,7 +43,7 @@ bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
     auto sendBtn = Button::createWithNode(
         ButtonSprite::create(
             "Proceed",
-            "goldFont.fnt",
+            cw::ui::font::gold,
             geodeTheme ? "geode.loader/GE_button_05.png" : "GJ_button_01.png",
             0.925f),
         [this](auto) {

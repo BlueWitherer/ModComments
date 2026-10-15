@@ -100,7 +100,7 @@ bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
         addChild(icon);
     };
 
-    auto name = Label::create(getModName(), "bigFont.fnt");
+    auto name = Label::create(getModName(), cw::ui::font::big);
     name->setID("name");
     name->setAnchorPoint({0, 0.5});
     name->setLimitLabelWidth(165.f, 0.525f);
@@ -118,7 +118,7 @@ bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
         devsText = devList[0];
     };
 
-    auto devs = Label::create(std::move(devsText), "goldFont.fnt");
+    auto devs = Label::create(std::move(devsText), cw::ui::font::gold);
     devs->setID("developers");
     devs->setAnchorPoint({0, 0.5});
     devs->setLimitLabelWidth(100.f, 0.425f);
@@ -381,7 +381,7 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
     m_commentList->m_contentLayer->updateLayout();
     m_commentList->scrollToTop();
 
-    m_errLabel = Label::create("Something went wrong...", "goldFont.fnt");
+    m_errLabel = Label::create("Something went wrong...", cw::ui::font::gold);
     m_errLabel->setID("error-label");
     m_errLabel->setZOrder(9);
     m_errLabel->setScale(0.475f);
@@ -424,7 +424,7 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
     m_mainLayer->addChildAtPosition(m_pageNextBtn, Anchor::Right, {-18.75f, -3.75f});
     m_mainLayer->addChildAtPosition(m_pagePrevBtn, Anchor::Left, {18.75f, -3.75f});
 
-    m_pageLabel = Label::create("Loading...", "goldFont.fnt");
+    m_pageLabel = Label::create("Loading...", cw::ui::font::gold);
     m_pageLabel->setID("page-label");
     m_pageLabel->setScale(0.5f);
     m_pageLabel->setAnchorPoint({1, 1});
@@ -444,7 +444,7 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
 
     cmmtBorder->addChildAtPosition(m_commentMenu, Anchor::Bottom, {0.f, 5.f});
 
-    m_inputBox = TextInput::create(m_commentMenu->getScaledContentWidth() - 2.5f, "Share your thoughts...", "chatFont.fnt");
+    m_inputBox = TextInput::create(m_commentMenu->getScaledContentWidth() - 2.5f, "Share your thoughts...", cw::ui::font::chat);
     m_inputBox->setID("comment-text-input");
     m_inputBox->setScale(0.925f);
     m_inputBox->setMaxCharCount(impl::maxCommentChars);
@@ -469,7 +469,7 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
                                     ? "You've been <cr>banned</c> from commenting."
                                     : "<cy>Log in</c> to <cg>post comments</c>!"))
                 : "<cy>Install this mod</c> if you'd like to <cg>post comments</c> here!",
-            "chatFont.fnt");
+            cw::ui::font::chat);
         install->setScale(0.675f);
         install->setAnchorPoint({0.5, 0});
         install->setAlignment(Label::Alignment::Center);
