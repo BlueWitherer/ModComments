@@ -53,7 +53,7 @@ void SelfDirector::startAuth() {
     m_authTask.spawn(
         authorize(),
         [this](WebRes res) {
-            if (res.isErr()) {
+            if (res.isErr() && res.getCode() != 401) {
                 log::error("{}: {}", res.getCode(), res.getError());
                 m_authProgPopup->showFailMessage(fmt::format("Failed to authorize ({})", res.getCode()));
 
@@ -61,7 +61,40 @@ void SelfDirector::startAuth() {
             };
 
             auto userRes = res.getPayload<CommentUser>();
-            if (userRes.isErr()) return m_authProgPopup->showFailMessage("Unknown error");
+            if (userRes.isErr()) {
+                auto banRes = res.getPayload<CommentBannedUser>();
+                if (banRes.isErr()) return m_authProgPopup->showFailMessage("Ban serialization error");
+
+                auto ban = std::move(banRes).unwrap();
+                m_banData = std::move(ban);
+
+                m_authorized = false;
+                m_user = CommentUser{};
+
+                m_banned = true;
+
+                cue::resetNode(m_authProgPopup);
+
+                auto const remaining = (ban.since + ban.until).until();
+
+                createQuickPopup(
+                    "Banned",
+                    fmt::format(
+                        "You've been <cr>banned from Mod Comments</c> due to breaking our rules.\n\n"
+                        "<co>Reason:</c>\n{}\n\n"
+                        "<cy>Until:</c>\n{}",
+                        m_banData.reason,
+                        remaining.toHumanString()),
+                    "OK",
+                    "Appeal",
+                    [](auto, bool ok) {
+                        if (ok) cw::ui::popups::showDiscord();
+                    });
+
+                return;
+            };
+
+            m_banned = false;
 
             setCurrentUser(std::move(userRes).unwrap());
 
@@ -96,8 +129,17 @@ Result<const CommentUser> SelfDirector::getCurrentUser() const noexcept {
     return Err("User is not logged in");
 };
 
+Result<const CommentBannedUser> SelfDirector::getBanData() const noexcept {
+    if (isBanned()) return Ok(m_banData);
+    return Err("User is not banned");
+};
+
 bool SelfDirector::isAuthorized() const noexcept {
     return argon::signedIn() && m_authorized;
+};
+
+bool SelfDirector::isBanned() const noexcept {
+    return argon::signedIn() && m_banned;
 };
 
 bool SelfDirector::isReported(uint64_t id) const noexcept {

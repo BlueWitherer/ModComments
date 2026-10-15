@@ -132,3 +132,28 @@ matjson::Value matjson::Serialize<CommentReport>::toJson(CommentReport const& va
 
     return out;
 };
+
+Result<CommentBannedUser> matjson::Serialize<CommentBannedUser>::fromJson(matjson::Value const& value) {
+    CommentBannedUser out;
+
+    GEODE_UNWRAP_INTO(out.user, value["user"].as<CommentUser>());
+    GEODE_UNWRAP_INTO(out.reason, value["reason"].asString());
+
+    GEODE_UNWRAP_INTO(auto uTime, value["since"].asInt());
+    out.since = asp::SystemTime::fromUnix(uTime);
+
+    GEODE_UNWRAP_INTO(auto duration, value["until"].asUInt());
+    out.until = asp::Duration::fromSecs(duration);
+
+    return Ok(std::move(out));
+};
+
+matjson::Value matjson::Serialize<CommentBannedUser>::toJson(CommentBannedUser const& value) {
+    Value out;
+    out["user"] = value.user;
+    out["reason"] = value.reason;
+    out["since"] = value.since.timeSinceEpoch().seconds();
+    out["until"] = value.until.seconds();
+
+    return out;
+};

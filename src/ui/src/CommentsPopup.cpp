@@ -15,6 +15,10 @@ namespace cw::mod_cmmts {
         static constexpr uint8_t refreshWait = 2;
 
         static constexpr uint8_t maxCommentChars = 128;
+
+        static bool isBanned() {
+            return SelfDirector::get()->isBanned();
+        };
     };
 };
 
@@ -461,7 +465,9 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
             Loader::get()->isModInstalled(m_modId)
                 ? (argon::signedIn()
                           ? "<cr>Unknown error</c>"  // idk let me have fun with my ternaries >:C
-                          : "<cy>Log in</c> to <cg>post comments</c>!")
+                          : (impl::isBanned()
+                                    ? "You've been <cr>banned</c> from commenting."
+                                    : "<cy>Log in</c> to <cg>post comments</c>!"))
                 : "<cy>Install this mod</c> if you'd like to <cg>post comments</c> here!",
             "chatFont.fnt");
         install->setScale(0.675f);
@@ -569,21 +575,9 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
 
     m_mainLayer->addChildAtPosition(m_refreshBtn, Anchor::BottomRight, {}, false);
 
-    auto infoBtn = Button::createWithSpriteFrameName(
-        "GJ_infoIcon_001.png",
-        [](auto) {
-            createQuickPopup(
-                "Help",
-                "This is the <cg>Mod Comment Menu</c>. You can <cy>read and send comments about this mod</c> here. Remember to <cr>read and follow the rules</c>.",
-                "OK",
-                nullptr,
-                nullptr);
-        });
-    infoBtn->setID("info-btn");
-    infoBtn->setScale(0.75f);
-    infoBtn->setZOrder(9);
-
-    m_mainLayer->addChildAtPosition(infoBtn, Anchor::TopRight, {-15.f, -15.f});
+    cw::ui::nodes::addHelpButton(
+        m_mainLayer,
+        "This is the <cg>Mod Comment Menu</c>. You can <cy>read and send comments about this mod</c> here. Remember to <cr>read and follow the rules</c>.");
 
     refreshComments();
 

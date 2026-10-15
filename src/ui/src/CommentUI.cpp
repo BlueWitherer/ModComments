@@ -304,7 +304,17 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
         if (argon::signedIn()) {
             Button* actionBtn = nullptr;
 
-            if (impl::isStaff() || isSelf()) {
+            if (impl::isStaff() && !m_comment.author.staff && !isSelf()) {
+                actionBtn = Button::createWithNode(
+                    CircleButtonSprite::createWithSpriteFrameName(
+                        "GJ_hammerIcon_001.png",
+                        0.95f,
+                        geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
+                    [this](auto) {
+                        StaffPopup::create(m_comment, [](auto, auto, auto, auto) {})->show();
+                    });
+                actionBtn->setID("staff-panel-btn");
+            } else if (isSelf()) {
                 actionBtn = Button::createWithSpriteFrameName(
                     "GJ_trashBtn_001.png",
                     [this](auto) {

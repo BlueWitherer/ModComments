@@ -19,6 +19,7 @@ namespace cw::mod_cmmts {
     enum class CommentAction : uint8_t {
         Delete,
         Report,
+        Ban,
     };
 
     enum class CommentVote : int8_t {

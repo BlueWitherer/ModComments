@@ -52,6 +52,8 @@ namespace cw::mod_cmmts {
             void addBadge(CommentUserStatus type);
             void addVoteNodes(cocos2d::CCNode* to, geode::Button*& btn, geode::Ref<geode::Label>& label, CommentVote type);
 
+            geode::Button* createActionButton(CommentAction type, bool geodeTheme = false);
+
         protected:
             void voteCallback(CommentVote t);
 

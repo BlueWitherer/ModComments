@@ -12,6 +12,9 @@ namespace cw::mod_cmmts {
         CommentUser m_user;
         bool m_authorized = false;
 
+        CommentBannedUser m_banData;
+        bool m_banned = false;
+
         geode::Ref<UploadActionPopup> m_authProgPopup = nullptr;
 
         geode::async::TaskHolder<WebRes> m_authTask;
@@ -30,7 +33,10 @@ namespace cw::mod_cmmts {
         void setReport(uint64_t id, bool unset = false);
 
         geode::Result<const CommentUser> getCurrentUser() const noexcept;
+        geode::Result<const CommentBannedUser> getBanData() const noexcept;
+
         bool isAuthorized() const noexcept;
+        bool isBanned() const noexcept;
 
         bool isReported(uint64_t id) const noexcept;
     };

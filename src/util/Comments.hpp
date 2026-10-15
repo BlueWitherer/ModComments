@@ -45,6 +45,13 @@ namespace cw::mod_cmmts {
         std::string reason;
         asp::SystemTime created;
     };
+
+    struct CommentBannedUser final {
+        CommentUser user;
+        std::string reason;
+        asp::SystemTime since;
+        asp::Duration until;
+    };
 };
 
 template <>
@@ -69,4 +76,10 @@ template <>
 struct matjson::Serialize<cw::mod_cmmts::CommentReport> final {
     static geode::Result<cw::mod_cmmts::CommentReport> fromJson(matjson::Value const& value);
     static matjson::Value toJson(cw::mod_cmmts::CommentReport const& value);
+};
+
+template <>
+struct matjson::Serialize<cw::mod_cmmts::CommentBannedUser> final {
+    static geode::Result<cw::mod_cmmts::CommentBannedUser> fromJson(matjson::Value const& value);
+    static matjson::Value toJson(cw::mod_cmmts::CommentBannedUser const& value);
 };

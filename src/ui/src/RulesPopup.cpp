@@ -2,8 +2,6 @@
 
 #include <Util.h>
 
-#include <cue/PlayerIcon.hpp>
-
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
@@ -51,7 +49,7 @@ bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
         [this](auto) {
             createQuickPopup(
                 "Confirm",
-                "<cg>Agree</c> to the <cr>rules</c>?",
+                "<cg>Agree</c> to the <cr>rules</c>?\n<co>This pop-up will not show up again.</c>",
                 "No",
                 "Yes",
                 [this](auto, bool ok) {
@@ -63,21 +61,9 @@ bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
 
     m_mainLayer->addChildAtPosition(sendBtn, Anchor::Bottom, {0.f, sendBtn->getScaledContentHeight() * 0.75f});
 
-    auto infoBtn = Button::createWithSpriteFrameName(
-        "GJ_infoIcon_001.png",
-        [](auto) {
-            createQuickPopup(
-                "Help",
-                "This is the <cg>Mod Comments rules pop-up</c>. To create comments, you must <cy>agree to the rules</c>.",
-                "OK",
-                nullptr,
-                nullptr);
-        });
-    infoBtn->setID("info-btn");
-    infoBtn->setScale(0.75f);
-    infoBtn->setZOrder(9);
-
-    m_mainLayer->addChildAtPosition(infoBtn, Anchor::TopRight, {-15.f, -15.f});
+    cw::ui::nodes::addHelpButton(
+        m_mainLayer,
+        "This is the <cg>Mod Comments rules pop-up</c>. To create comments, you must <cy>agree to the rules</c>.");
 
     return true;
 };
